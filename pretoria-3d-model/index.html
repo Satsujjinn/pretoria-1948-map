@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>1948 Pretoria 3D Terrain & Mosaic Model</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: #000; color: #e0e0e0; font-family: system-ui, sans-serif; height: 100vh; overflow: hidden; }
+  #webglContainer { width: 100vw; height: 100vh; display: block; }
+  .hud { position: absolute; top: 10px; left: 10px; background: rgba(15,15,15,0.92); border: 1px solid #00e676; color: #00e676; padding: 8px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; z-index: 100; pointer-events: none; }
+  .controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 100; background: rgba(20,20,20,0.9); padding: 8px 12px; border-radius: 10px; border: 1px solid #333; }
+  .btn { background: #00c853; color: #000; border: none; padding: 10px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px; }
+  .btn-blue { background: #00b0ff; color: #000; }
+</style>
+</head>
+<body>
+
+<div class="hud" id="hudStatus">1948 PRETORIA 3D MODEL: Initializing Terrain Mesh...</div>
+
+<div id="webglContainer"></div>
+
+<div class="controls">
+  <label class="btn">
+    📁 Load 1948 Mosaic Texture
+    <input type="file" id="textureInput" accept="image/*" style="display:none">
+  </label>
+  <button class="btn btn-blue" onclick="resetCamera()">🎥 Reset View</button>
+</div>
+
+<script>
+let scene, camera, renderer, terrainMesh;
+
+function init3D() {
+  const container = document.getElementById('webglContainer');
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0d0d0d);
+
+  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+  camera.position.set(0, -300, 250);
+  camera.lookAt(0, 0, 0);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  container.appendChild(renderer.domElement);
+
+  // Lighting for 3D depth
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+  scene.add(ambientLight);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  dirLight.position.set(100, -200, 300);
+  scene.add(dirLight);
+
+  // Create base 3D Terrain Plane with elevation displacement
+  const geometry = new THREE.PlaneGeometry(400, 400, 64, 64);
+  
+  // Apply synthetic Pretoria topography (Magaliesberg Ridge elevation profile)
+  const pos = geometry.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    // Simulate ridge height across terrain
+    const z = Math.sin(x * 0.02) * 25 + Math.cos(y * 0.015) * 15;
+    pos.setZ(i, z);
+  }
+  geometry.computeVertexNormals();
+
+  const material = new THREE.MeshStandardMaterial({
+    color: 0x555555,
+    roughness: 0.8,
+    wireframe: false
+  });
+
+  terrainMesh = new THREE.Mesh(geometry, material);
+  scene.add(terrainMesh);
+
+  document.getElementById('hudStatus').textContent = 'READY: Load your stitched 1948 mosaic image as texture.';
+  animate();
+}
+
+// Load user's exported 1948 mosaic image onto the 3D terrain
+document.getElementById('textureInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = event => {
+    const texture = new THREE.TextureLoader().load(event.target.result, () => {
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      terrainMesh.material.map = texture;
+      terrainMesh.material.color.set(0xffffff);
+      terrainMesh.material.needsUpdate = true;
+      document.getElementById('hudStatus').textContent = '✅ 1948 TEXTURE DRAPED ON 3D TERRAIN MODEL!';
+    });
+  };
+  reader.readAsDataURL(file);
+});
+
+function resetCamera() {
+  camera.position.set(0, -300, 250);
+  camera.lookAt(0, 0, 0);
+}
+
+// Mouse orbital rotation
+let isDragging = false, prevMouseX = 0, prevMouseY = 0;
+window.addEventListener('pointerdown', e => { isDragging = true; prevMouseX = e.clientX; prevMouseY = e.clientY; });
+window.addEventListener('pointermove', e => {
+  if (!isDragging || !terrainMesh) return;
+  const dx = e.clientX - prevMouseX;
+  const dy = e.clientY - prevMouseY;
+  terrainMesh.rotation.z += dx * 0.005;
+  terrainMesh.rotation.x += dy * 0.005;
+  prevMouseX = e.clientX; prevMouseY = e.clientY;
+});
+window.addEventListener('pointerup', () => isDragging = false);
+
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+
+init3D();
+</script>
+</body>
+</html>
