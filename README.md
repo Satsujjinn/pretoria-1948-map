@@ -46,3 +46,6 @@
 | **LICENSE** | MIT License — Copyright (c) 2026 Leon Christoffel Mynhardt Jordaan |
 
 </div>
+
+## Applications
+- [1948 Pretoria Historical Orthorectifier & Continuous Mosaic App](pretoria-1948-map/index.html)
