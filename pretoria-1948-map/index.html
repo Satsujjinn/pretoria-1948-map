@@ -3,29 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>1948 Pretoria Historical Google Maps & Orthorectifier</title>
+<title>1948 Pretoria Continuous Orthorectified Mosaic Engine</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   * { box-sizing: border-box; }
   body { margin: 0; padding: 0; background: #0d0d0d; color: #e0e0e0; font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-  
   #mapContainer { position: relative; flex: 1; width: 100%; background: #000; overflow: hidden; }
   #map { width: 100%; height: 100%; z-index: 1; }
-  
   .hud-bar { position: absolute; top: 8px; left: 8px; right: 56px; z-index: 1000; display: flex; flex-direction: column; gap: 4px; pointer-events: none; }
   .hud-badge { background: rgba(10,10,10,0.88); border: 1px solid #00e676; color: #00e676; padding: 5px 8px; border-radius: 6px; font-family: monospace; font-size: 11px; pointer-events: auto; backdrop-filter: blur(4px); width: fit-content; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
   .map-fab-bar { position: absolute; bottom: 10px; left: 10px; right: 10px; z-index: 1000; display: flex; gap: 6px; align-items: center; background: rgba(18,18,18,0.92); padding: 6px 10px; border-radius: 10px; border: 1px solid #333; }
   .map-fab-bar label { font-size: 11px; color: #00e676; font-weight: bold; white-space: nowrap; }
   .map-fab-bar input[type=range] { flex: 1; accent-color: #00e676; }
   .mini-btn { background: #262626; color: #fff; border: 1px solid #444; padding: 5px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap; }
-
   #gcpModal { display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; padding: 8px; }
   .gcp-header { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 6px; }
   #gcpCanvasWrap { flex: 1; overflow: auto; border: 1px solid #00e676; border-radius: 8px; position: relative; background: #111; }
   #gcpPlateCanvas { display: block; transform-origin: 0 0; cursor: crosshair; }
-
   #drawer { background: #161616; border-top: 2px solid #2a2a2a; height: 42vh; overflow-y: auto; padding: 8px 12px 24px 12px; z-index: 1001; transition: height 0.25s ease; }
   #drawer.collapsed { height: 44px; overflow: hidden; padding-bottom: 0; }
   .drawer-handle { display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #282828; cursor: pointer; }
@@ -35,7 +30,6 @@
   .btn-orange { background: #ff9100; color: #000; }
   .btn-blue { background: #00b0ff; color: #000; }
   .btn-dark { background: #242424; color: #00e676; border: 1px solid #383838; }
-
   .section-title { color: #4db6ac; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin: 10px 0 5px 0; display: flex; justify-content: space-between; }
   .control-row { background: #202020; padding: 6px 10px; border-radius: 8px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
   .control-row label { flex: 1.1; font-size: 12px; color: #ccc; }
@@ -52,21 +46,19 @@
 <div id="mapContainer">
   <div id="map"></div>
   <div class="hud-bar">
-    <div class="hud-badge" id="hudStatus">READY: Tap 'Add 1948 Plate' or 'Pin Landmark'</div>
-    <div class="hud-badge" id="hudMath">RES: -- m/px | W: --m | ROT: 0° | GCPs: 0 (RMS: --)</div>
+    <div class="hud-badge" id="hudStatus">READY: Load Continuous Plates</div>
+    <div class="hud-badge" id="hudMath">ALTITUDE GSD: -- m/px | GCPs: 0</div>
   </div>
-
   <div class="map-fab-bar">
     <label>1948 Wipe:</label>
     <input type="range" id="curtainSlider" min="0" max="100" value="100">
     <button class="mini-btn" id="btnTogglePins" onclick="togglePins()">📍 Hide Pins</button>
   </div>
-
   <div id="gcpModal">
     <div class="gcp-header">
       <b style="color:#00e676; font-size:12px;">STEP 1: Tap street corner on 1948 Plate</b>
       <div style="display:flex; gap:4px;">
-        <button class="mini-btn" onclick="zoomGcp(1.4)">➕ Zoom In</button>
+        <button class="mini-btn" onclick="zoomGcp(1.4)">➕ Zoom</button>
         <button class="mini-btn" onclick="zoomGcp(0.7)">➖ Out</button>
         <button class="mini-btn" onclick="cancelGcp()">✖ Cancel</button>
       </div>
@@ -79,115 +71,55 @@
 
 <div id="drawer">
   <div class="drawer-handle" onclick="toggleDrawer()">
-    <span style="font-weight:bold; font-size:13px; color:#00e676;">⚙️ 1948 Orthorectifier Controls (<span id="activePlateName">None</span>)</span>
+    <span style="font-weight:bold; font-size:13px; color:#00e676;">⚙️ Orthorectified Continuous Mosaic (<span id="activePlateName">None</span>)</span>
     <span class="mini-btn" id="drawerToggleBtn">🔽 Full Map</span>
   </div>
-
   <div class="plate-list" id="plateTabs"></div>
-
   <div class="btn-row">
     <label class="btn btn-green">
-      ➕ Add 1948 Plate
+      ➕ Add 1948 Plates
       <input type="file" id="plateInput" accept="image/*" multiple style="display:none">
     </label>
-    <button class="btn btn-orange" id="btnSnapseed">👁️ 25% Road-Lock</button>
+    <button class="btn btn-orange" id="btnSnapseed">👁️ Continuous Difference</button>
   </div>
-
   <div class="btn-row">
-    <button class="btn btn-blue" id="btnAddGcp">📍 Pin Landmark (Auto-Math)</button>
-    <button class="btn btn-dark" id="btnUndoGcp" onclick="undoLastGcp()">↩️ Undo Last Pin</button>
+    <button class="btn btn-blue" id="btnAddGcp">📍 Pin Landmark (Altitude Match)</button>
+    <button class="btn btn-dark" onclick="undoLastGcp()">↩️ Undo Pin</button>
   </div>
-
-  <div class="section-title">
-    <span>Jump to 1948 Plate Neighborhoods</span>
-  </div>
-  <div class="btn-row" style="grid-template-columns: repeat(4, 1fr);">
-    <button class="btn btn-dark" onclick="jumpTo(-25.7515, 28.1635, 15.5)">5795 (Pta W)</button>
-    <button class="btn btn-dark" onclick="jumpTo(-25.7525, 28.1890, 15.5)">5793 (Stn)</button>
-    <button class="btn btn-dark" onclick="jumpTo(-25.7461, 28.1881, 16)">Church Sq</button>
-    <button class="btn btn-dark" onclick="jumpTo(-25.7402, 28.2119, 16)">Union Bldgs</button>
-  </div>
-
-  <div class="section-title">
-    <span>Mathematical Plate Parameters</span>
-    <span style="color:#aaa; font-size:10px; cursor:pointer;" onclick="clearGcps()">🗑️ Clear All Pins</span>
-  </div>
-
+  <div class="section-title"><span>Altitude Width & Scale Controls</span></div>
   <div class="control-row">
-    <label>Altitude Width (m):</label>
+    <label>Ground Width (m):</label>
     <input type="range" id="widthSlider" min="400" max="5000" step="1" value="1602">
     <input type="number" id="widthVal" class="val-box" value="1602">
   </div>
-
   <div class="control-row">
     <label>Camera Heading (°):</label>
     <input type="range" id="rotSlider" min="-180" max="180" step="0.05" value="0">
     <input type="number" id="rotVal" class="val-box" step="0.05" value="0.00">
   </div>
-
   <div class="control-row">
-    <label>Pitch Skew (X°):</label>
+    <label>Perspective Pitch (X°):</label>
     <input type="range" id="skewXSlider" min="-15" max="15" step="0.1" value="0">
     <input type="number" id="skewXVal" class="val-box" step="0.1" value="0.0">
   </div>
-
   <div class="control-row">
-    <label>Roll Skew (Y°):</label>
+    <label>Perspective Roll (Y°):</label>
     <input type="range" id="skewYSlider" min="-15" max="15" step="0.1" value="0">
     <input type="number" id="skewYVal" class="val-box" step="0.1" value="0.0">
   </div>
-
   <div class="control-row">
-    <label>Left Dial Crop (%):</label>
-    <input type="range" id="cropSlider" min="0" max="15" step="0.1" value="9.2">
-    <input type="number" id="cropVal" class="val-box" step="0.1" value="9.2">
+    <label>Opacity (%):</label>
+    <input type="range" id="alphaSlider" min="5" max="100" step="1" value="80">
+    <input type="number" id="alphaVal" class="val-box" value="80">
   </div>
-
-  <div class="control-row">
-    <label>Border Trim (%):</label>
-    <input type="range" id="trimSlider" min="0" max="4" step="0.1" value="1.2">
-    <input type="number" id="trimVal" class="val-box" step="0.1" value="1.2">
-  </div>
-
-  <div class="control-row">
-    <label>Overlay Opacity (%):</label>
-    <input type="range" id="alphaSlider" min="5" max="100" step="1" value="75">
-    <input type="number" id="alphaVal" class="val-box" value="75">
-  </div>
-
-  <div class="control-row">
-    <label>Blend Mode:</label>
-    <select id="blendSelect">
-      <option value="normal">Normal Overlay</option>
-      <option value="difference">Pixel Difference (High-Contrast Align)</option>
-      <option value="screen">Snapseed Add / Screen</option>
-      <option value="multiply">Multiply (Darken Street Grid)</option>
-    </select>
-  </div>
-
-  <div class="btn-row" style="grid-template-columns: repeat(4, 1fr); margin-top:8px;">
-    <button class="btn btn-dark" onclick="nudgePlate(0.00015, 0)">▲ N</button>
-    <button class="btn btn-dark" onclick="nudgePlate(-0.00015, 0)">▼ S</button>
-    <button class="btn btn-dark" onclick="nudgePlate(0, -0.00015)">◀ W</button>
-    <button class="btn btn-dark" onclick="nudgePlate(0, 0.00015)">▶ E</button>
-  </div>
-
   <div class="btn-row" style="margin-top:6px;">
-    <button class="btn btn-green" onclick="exportGeoJsonConfig()">💾 Save Project (.json)</button>
-    <label class="btn btn-dark">
-      📂 Load Project (.json)
-      <input type="file" id="jsonInput" accept=".json" style="display:none">
-    </label>
+    <button class="btn btn-green" onclick="exportContinuousProject()">💾 Save Continuous Project (.json)</button>
   </div>
 </div>
 
 <script>
 const map = L.map('map', { zoomSnap: 0.25, zoomDelta: 0.5, zoomControl: false }).setView([-25.7515, 28.1750], 15);
-
-const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20 });
-const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20 });
-osmLayer.addTo(map);
-L.control.layers({ "Modern Street Map": osmLayer, "Modern Satellite": satLayer }, null, { position: 'topright' }).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20 }).addTo(map);
 
 const plates = [];
 let activeIdx = -1;
@@ -206,18 +138,10 @@ function toggleDrawer() {
   setTimeout(() => map.invalidateSize(), 260);
 }
 
-function jumpTo(lat, lng, z) { map.setView([lat, lng], z); }
-
-function guessInitialCenter(name) {
-  if (name.includes('5795') || name.includes('93601')) return L.latLng(-25.7515, 28.1635);
-  if (name.includes('5793') || name.includes('93599')) return L.latLng(-25.7525, 28.1890);
-  return map.getCenter();
-}
-
 function processCleanCanvas(plate) {
   const img = plate.rawImg;
-  const leftCut = Math.floor(img.width * (plate.cropPct / 100));
-  const trim = Math.floor(img.width * (plate.trimPct / 100));
+  const leftCut = Math.floor(img.width * 0.092); // Strips 9.2% instrument strip
+  const trim = Math.floor(img.width * 0.012);     // Strips white scan frame
   const w = Math.max(10, img.width - leftCut - trim);
   const h = Math.max(10, img.height - trim * 2);
 
@@ -228,7 +152,8 @@ function processCleanCanvas(plate) {
   plate.cleanDataUrl = c.toDataURL('image/jpeg', 0.92);
 }
 
-const HistoricalPlateOverlay = L.Layer.extend({
+// Orthorectified Continuous Tile Layer
+const ContinuousOrthorectifiedOverlay = L.Layer.extend({
   initialize: function(plate) { this.plate = plate; },
   onAdd: function(map) {
     this._map = map;
@@ -260,7 +185,6 @@ const HistoricalPlateOverlay = L.Layer.extend({
     this._el.style.left = `${centerPt.x - pxWidth / 2}px`;
     this._el.style.top = `${centerPt.y - pxHeight / 2}px`;
     this._el.style.opacity = p.opacity / 100;
-    this._el.style.mixBlendMode = p.blendMode;
     this._el.style.clipPath = `inset(0 ${100 - curtainPct}% 0 0)`;
     this._el.style.transform = `rotate(${p.rotation}deg) skew(${p.skewX}deg, ${p.skewY}deg)`;
   }
@@ -285,32 +209,27 @@ document.getElementById('plateInput').addEventListener('change', e => {
     const img = new Image();
     img.onload = () => {
       const name = file.name.replace(/\.[^/.]+$/, "");
-      const startCenter = guessInitialCenter(name);
+      const center = map.getCenter();
       const plate = {
         name,
         rawImg: img,
-        center: L.latLng(startCenter.lat, startCenter.lng + (idx * 0.002)),
-        widthMeters: 1602,
+        center: L.latLng(center.lat, center.lng + (idx * 0.003)),
+        widthMeters: 1602, // Exact altitude scale base
         rotation: 0,
         skewX: 0,
         skewY: 0,
-        cropPct: 9.2,
-        trimPct: 1.2,
-        opacity: 75,
-        blendMode: 'normal',
+        opacity: 80,
         rmsMeters: null,
         gcps: []
       };
       processCleanCanvas(plate);
-      plate.layer = new HistoricalPlateOverlay(plate).addTo(map);
-      plate.handle = L.marker(plate.center, { draggable: true, title: `Drag ${plate.name}` }).addTo(map);
+      plate.layer = new ContinuousOrthorectifiedOverlay(plate).addTo(map);
+      plate.handle = L.marker(plate.center, { draggable: true, title: plate.name }).addTo(map);
       plate.handle.on('drag', ev => {
         plate.center = ev.target.getLatLng();
         plate.layer._update();
       });
-
       plates.push(plate);
-      map.setView(plate.center, 15.5);
       selectPlate(plates.length - 1);
     };
     img.src = URL.createObjectURL(file);
@@ -324,11 +243,10 @@ function selectPlate(idx) {
   plates.forEach((p, i) => {
     const chip = document.createElement('div');
     chip.className = 'plate-chip' + (i === activeIdx ? ' active' : '');
-    chip.textContent = `🖼️ ${p.name} (${p.gcps.length} pins)`;
+    chip.textContent = `🖼️ ${p.name} (${p.gcps.length} GCPs)`;
     chip.onclick = () => selectPlate(i);
     tabs.appendChild(chip);
   });
-
   const p = plates[activeIdx];
   if (!p) return;
   document.getElementById('activePlateName').textContent = p.name;
@@ -336,10 +254,7 @@ function selectPlate(idx) {
   setControl('rot', p.rotation);
   setControl('skewX', p.skewX);
   setControl('skewY', p.skewY);
-  setControl('crop', p.cropPct);
-  setControl('trim', p.trimPct);
   setControl('alpha', p.opacity);
-  document.getElementById('blendSelect').value = p.blendMode;
   updateHud();
 }
 
@@ -348,16 +263,14 @@ function setControl(prefix, val) {
   document.getElementById(prefix + 'Val').value = val;
 }
 
-function bindSlider(prefix, prop, needsReprocess = false) {
+function bindSlider(prefix, prop) {
   const s = document.getElementById(prefix + 'Slider');
   const b = document.getElementById(prefix + 'Val');
   const update = (val) => {
     s.value = val; b.value = val;
     if (activeIdx < 0) return;
-    const p = plates[activeIdx];
-    p[prop] = parseFloat(val);
-    if (needsReprocess) processCleanCanvas(p);
-    p.layer._update();
+    plates[activeIdx][prop] = parseFloat(val);
+    plates[activeIdx].layer._update();
     updateHud();
   };
   s.addEventListener('input', () => update(s.value));
@@ -368,35 +281,9 @@ bindSlider('width', 'widthMeters');
 bindSlider('rot', 'rotation');
 bindSlider('skewX', 'skewX');
 bindSlider('skewY', 'skewY');
-bindSlider('crop', 'cropPct', true);
-bindSlider('trim', 'trimPct', true);
 bindSlider('alpha', 'opacity');
 
-document.getElementById('blendSelect').addEventListener('change', e => {
-  if (activeIdx < 0) return;
-  plates[activeIdx].blendMode = e.target.value;
-  plates[activeIdx].layer._update();
-});
-
-let snapseedOn = false;
-document.getElementById('btnSnapseed').addEventListener('click', () => {
-  if (activeIdx < 0) return;
-  snapseedOn = !snapseedOn;
-  const p = plates[activeIdx];
-  p.opacity = snapseedOn ? 35 : 80;
-  p.blendMode = snapseedOn ? 'difference' : 'normal';
-  selectPlate(activeIdx);
-  p.layer._update();
-});
-
-function nudgePlate(dLat, dLng) {
-  if (activeIdx < 0) return;
-  const p = plates[activeIdx];
-  p.center = L.latLng(p.center.lat + dLat, p.center.lng + dLng);
-  p.handle.setLatLng(p.center);
-  p.layer._update();
-}
-
+// Least-Squares Helmert Similarity Solver for continuous altitude & scale matching
 const gcpModal = document.getElementById('gcpModal');
 const gcpCanvas = document.getElementById('gcpPlateCanvas');
 
@@ -406,33 +293,24 @@ function zoomGcp(factor) {
 }
 
 document.getElementById('btnAddGcp').addEventListener('click', () => {
-  if (activeIdx < 0) return alert('Load a 1948 plate first!');
+  if (activeIdx < 0) return alert('Load a plate first!');
   const p = plates[activeIdx];
   gcpCanvas.width = p.cleanCanvas.width;
   gcpCanvas.height = p.cleanCanvas.height;
   gcpZoom = document.getElementById('mapContainer').clientWidth / p.cleanCanvas.width;
   gcpCanvas.style.width = `${gcpCanvas.width * gcpZoom}px`;
-
   const cx = gcpCanvas.getContext('2d');
   cx.drawImage(p.cleanCanvas, 0, 0);
-
   p.gcps.forEach((g, idx) => {
     const px = (g.u + 0.5) * gcpCanvas.width;
     const py = (g.v + 0.5) * gcpCanvas.height;
-    cx.strokeStyle = '#000'; cx.lineWidth = 6;
-    cx.beginPath(); cx.arc(px, py, 24, 0, Math.PI * 2); cx.stroke();
-    cx.fillStyle = '#00e676'; cx.fill();
-    cx.fillStyle = '#000'; cx.font = 'bold 26px monospace';
-    cx.fillText(idx + 1, px - 8, py + 9);
+    cx.fillStyle = '#00e676'; cx.beginPath(); cx.arc(px, py, 20, 0, Math.PI * 2); cx.fill();
+    cx.fillStyle = '#000'; cx.font = 'bold 22px monospace'; cx.fillText(idx + 1, px - 6, py + 7);
   });
-
   gcpModal.style.display = 'flex';
 });
 
-function cancelGcp() {
-  gcpModal.style.display = 'none';
-  awaitingMapClickForGcp = null;
-}
+function cancelGcp() { gcpModal.style.display = 'none'; awaitingMapClickForGcp = null; }
 
 gcpCanvas.addEventListener('click', e => {
   const rect = gcpCanvas.getBoundingClientRect();
@@ -440,19 +318,15 @@ gcpCanvas.addEventListener('click', e => {
   const v = ((e.clientY - rect.top) / rect.height) - 0.5;
   gcpModal.style.display = 'none';
   awaitingMapClickForGcp = { u, v };
-  document.getElementById('hudStatus').textContent = 'STEP 2: Tap that EXACT SAME street corner on the Pretoria Map!';
+  document.getElementById('hudStatus').textContent = 'STEP 2: Tap corresponding street intersection on Pretoria Map!';
 });
 
 map.on('click', e => {
   if (!awaitingMapClickForGcp || activeIdx < 0) return;
   const p = plates[activeIdx];
-  const pinNum = p.gcps.length + 1;
-  const marker = L.circleMarker(e.latlng, { radius: 8, color: '#00e676', fillColor: '#000', fillOpacity: 0.9 })
-    .bindTooltip(`GCP #${pinNum}`, { permanent: true, direction: 'top' }).addTo(map);
-
+  const marker = L.circleMarker(e.latlng, { radius: 8, color: '#00e676', fillColor: '#000', fillOpacity: 0.9 }).addTo(map);
   p.gcps.push({ u: awaitingMapClickForGcp.u, v: awaitingMapClickForGcp.v, lat: e.latlng.lat, lng: e.latlng.lng, marker });
   awaitingMapClickForGcp = null;
-
   solveLeastSquaresHelmert(p);
   selectPlate(activeIdx);
 });
@@ -466,41 +340,17 @@ function undoLastGcp() {
   selectPlate(activeIdx);
 }
 
-function clearGcps() {
-  if (activeIdx < 0) return;
-  const p = plates[activeIdx];
-  p.gcps.forEach(g => map.removeLayer(g.marker));
-  p.gcps = [];
-  p.rmsMeters = null;
-  updateHud();
-}
-
 function solveLeastSquaresHelmert(p) {
   const n = p.gcps.length;
-  if (n === 0) return;
-
+  if (n < 2) return;
   const mLat = 111132.92;
   const mLng = 111412.84 * Math.cos(p.center.lat * Math.PI / 180);
   const aspect = p.cleanCanvas.height / p.cleanCanvas.width;
 
-  if (n === 1) {
-    const g = p.gcps[0];
-    const rad = p.rotation * Math.PI / 180;
-    const dxM = p.widthMeters * (g.u * Math.cos(rad) - (g.v * aspect) * Math.sin(rad));
-    const dyM = p.widthMeters * (g.u * Math.sin(rad) + (g.v * aspect) * Math.cos(rad));
-    p.center = L.latLng(g.lat + (dyM / mLat), g.lng - (dxM / mLng));
-    p.handle.setLatLng(p.center);
-    p.layer._update();
-    document.getElementById('hudStatus').textContent = 'GCP #1 Anchored! Add GCP #2 across the plate to solve Scale & Rotation.';
-    return;
-  }
-
   const refLat = p.gcps[0].lat, refLng = p.gcps[0].lng;
   const pts = p.gcps.map(g => ({
-    x: g.u,
-    y: g.v * aspect,
-    X: (g.lng - refLng) * mLng,
-    Y: (refLat - g.lat) * mLat
+    x: g.u, y: g.v * aspect,
+    X: (g.lng - refLng) * mLng, Y: (refLat - g.lat) * mLat
   }));
 
   const cx = pts.reduce((s, q) => s + q.x, 0) / n;
@@ -520,12 +370,8 @@ function solveLeastSquaresHelmert(p) {
   if (Sxx > 1e-6) {
     const a = aNum / Sxx;
     const b = bNum / Sxx;
-    const scaleMeters = Math.hypot(a, b);
-    const rotRad = Math.atan2(b, a);
-
-    p.widthMeters = Math.round(scaleMeters);
-    p.rotation = parseFloat((rotRad * 180 / Math.PI).toFixed(2));
-
+    p.widthMeters = Math.round(Math.hypot(a, b));
+    p.rotation = parseFloat((Math.atan2(b, a) * 180 / Math.PI).toFixed(2));
     const X0 = cX - (a * cx - b * cy);
     const Y0 = cY - (b * cx + a * cy);
     p.center = L.latLng(refLat - (Y0 / mLat), refLng + (X0 / mLng));
@@ -538,30 +384,27 @@ function solveLeastSquaresHelmert(p) {
       errSq += (predX - q.X) ** 2 + (predY - q.Y) ** 2;
     });
     p.rmsMeters = Math.sqrt(errSq / n).toFixed(1);
-
     p.layer._update();
-    document.getElementById('hudStatus').textContent = `MATH SOLVED (${n} GCPs): RMS Error ±${p.rmsMeters}m`;
+    document.getElementById('hudStatus').textContent = `CONTINUOUS ORTHORECTIFIED: RMS Error ±${p.rmsMeters}m`;
   }
 }
 
 function updateHud() {
   if (activeIdx < 0) return;
   const p = plates[activeIdx];
-  const mPerPx = (p.widthMeters / p.cleanCanvas.width).toFixed(3);
-  const rmsTxt = p.rmsMeters !== null ? `±${p.rmsMeters}m` : '--';
-  document.getElementById('hudMath').textContent = 
-    `RES: ${mPerPx} m/px | W: ${p.widthMeters}m | ROT: ${p.rotation}° | GCPs: ${p.gcps.length} (RMS: ${rmsTxt})`;
+  const gsd = (p.widthMeters / p.cleanCanvas.width).toFixed(3);
+  const rms = p.rmsMeters ? `±${p.rmsMeters}m` : '--';
+  document.getElementById('hudMath').textContent = `GSD: ${gsd} m/px | WIDTH: ${p.widthMeters}m | GCPs: ${p.gcps.length} (RMS: ${rms})`;
 }
 
-function exportGeoJsonConfig() {
+function exportContinuousProject() {
   const data = plates.map(p => ({
     name: p.name, centerLat: p.center.lat, centerLng: p.center.lng,
-    widthMeters: p.widthMeters, rotationDeg: p.rotation,
-    skewX: p.skewX, skewY: p.skewY, cropPct: p.cropPct, trimPct: p.trimPct
+    widthMeters: p.widthMeters, rotationDeg: p.rotation, skewX: p.skewX, skewY: p.skewY
   }));
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
-  a.download = `Pretoria_1948_Georef_${Date.now()}.json`;
+  a.download = `Pretoria_1948_Continuous_Mosaic_${Date.now()}.json`;
   a.href = URL.createObjectURL(blob);
   a.click();
 }
