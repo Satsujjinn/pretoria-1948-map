@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Universal Photo Upscaler & Enhancer</title>
+<title>Universal Photo Upscaler & Enhancer (Lanczos-3 Engine)</title>
 <style>
   * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
   body { background: #121212; color: #f0f0f0; margin: 0; padding: 14px; display: flex; flex-direction: column; align-items: center; }
@@ -18,21 +18,30 @@
   canvas { width: 100%; border-radius: 8px; border: 1px solid #333; display: none; margin-bottom: 12px; }
   .controls { display: none; gap: 8px; flex-direction: column; }
   .opt-row { display: none; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 8px; background: #262629; padding: 10px 12px; border-radius: 8px; }
-  select, input[type="range"] { background: #121212; color: #fff; border: 1px solid #555; padding: 6px 10px; border-radius: 6px; font-weight: 600; width: 130px; }
-  input[type="range"] { accent-color: #00e676; width: 45%; }
-  .val-display { font-family: monospace; color: #00e676; font-size: 12px; }
+  select, input[type="range"] { background: #121212; color: #fff; border: 1px solid #555; padding: 6px 10px; border-radius: 6px; font-weight: 600; width: 145px; }
+  input[type="range"] { accent-color: #00e676; width: 42%; }
+  .val-display { font-family: monospace; color: #00e676; font-size: 12px; width: 45px; text-align: right; }
 </style>
 </head>
 <body>
 
 <div class="card">
   <h1>Universal Photo Upscaler</h1>
-  <p class="sub">High-Resolution Resampling & Detail Enhancement Studio</p>
+  <p class="sub">Separable Lanczos-3 Sinc + Sobel Edge-Guided Unsharp</p>
 
   <label class="btn btn-primary">
     Select Photo to Upscale
     <input type="file" id="fileInput" accept="image/*">
   </label>
+
+  <div class="opt-row" id="kernelRow">
+    <span>Interpolation Kernel:</span>
+    <select id="kernelSelect">
+      <option value="lanczos3" selected>Lanczos-3 (Sinc)</option>
+      <option value="mitchell">Mitchell-Netravali</option>
+      <option value="native">Fast Hardware Bicubic</option>
+    </select>
+  </div>
 
   <div class="opt-row" id="scaleRow">
     <span>Upscale Factor:</span>
@@ -45,20 +54,26 @@
   </div>
 
   <div class="opt-row" id="sharpRow">
-    <span>Edge Sharpening:</span>
-    <input type="range" id="sharpSlider" min="0" max="1.0" step="0.05" value="0.35">
-    <span class="val-display" id="sharpVal">0.35</span>
+    <span>Isotropic Sharpen:</span>
+    <input type="range" id="sharpSlider" min="0" max="1.2" step="0.05" value="0.45">
+    <span class="val-display" id="sharpVal">0.45</span>
+  </div>
+
+  <div class="opt-row" id="threshRow">
+    <span>Noise Gate (Sobel):</span>
+    <input type="range" id="threshSlider" min="0" max="40" step="2" value="12">
+    <span class="val-display" id="threshVal">12</span>
   </div>
 
   <div class="opt-row" id="brightRow">
-    <span>Brightness / Contrast:</span>
+    <span>Gamma / Exposure:</span>
     <input type="range" id="brightSlider" min="0.8" max="1.2" step="0.02" value="1.0">
     <span class="val-display" id="brightVal">1.0x</span>
   </div>
 
   <div class="opt-row" id="autoEnhanceRow">
-    <span>Auto Balance / Levels:</span>
-    <input type="checkbox" id="autoEnhanceToggle" style="transform:scale(1.4);">
+    <span>CDF 1%-99% Auto-Levels:</span>
+    <input type="checkbox" id="autoEnhanceToggle" checked style="transform:scale(1.4);">
   </div>
 
   <div id="telemetry" class="telemetry"></div>
@@ -71,14 +86,18 @@
 </div>
 
 <script>
+const MAX_PIXELS = 16777216;
 const fileInput = document.getElementById('fileInput');
 const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
 const telemetry = document.getElementById('telemetry');
 const controls = document.getElementById('controls');
+const kernelSelect = document.getElementById('kernelSelect');
 const scaleSelect = document.getElementById('scaleSelect');
 const sharpSlider = document.getElementById('sharpSlider');
 const sharpVal = document.getElementById('sharpVal');
+const threshSlider = document.getElementById('threshSlider');
+const threshVal = document.getElementById('threshVal');
 const brightSlider = document.getElementById('brightSlider');
 const brightVal = document.getElementById('brightVal');
 const autoEnhanceToggle = document.getElementById('autoEnhanceToggle');
@@ -93,95 +112,258 @@ fileInput.addEventListener('change', e => {
     const img = new Image();
     img.onload = () => {
       loadedImg = img;
-      document.getElementById('scaleRow').style.display = 'flex';
-      document.getElementById('sharpRow').style.display = 'flex';
-      document.getElementById('brightRow').style.display = 'flex';
-      document.getElementById('autoEnhanceRow').style.display = 'flex';
-      processImage();
+      ['kernelRow', 'scaleRow', 'sharpRow', 'threshRow', 'brightRow', 'autoEnhanceRow'].forEach(id => {
+        document.getElementById(id).style.display = 'flex';
+      });
+      triggerProcess();
     };
     img.src = ev.target.result;
   };
   reader.readAsDataURL(file);
 });
 
-scaleSelect.addEventListener('change', () => { if (loadedImg) processImage(); });
-sharpSlider.addEventListener('input', () => { sharpVal.innerText = sharpSlider.value; if (loadedImg) processImage(); });
-brightSlider.addEventListener('input', () => { brightVal.innerText = brightSlider.value + 'x'; if (loadedImg) processImage(); });
-autoEnhanceToggle.addEventListener('change', () => { if (loadedImg) processImage(); });
+[kernelSelect, scaleSelect, autoEnhanceToggle].forEach(el => {
+  el.addEventListener('change', () => { if (loadedImg) triggerProcess(); });
+});
+sharpSlider.addEventListener('input', () => { sharpVal.innerText = sharpSlider.value; if (loadedImg) triggerProcess(); });
+threshSlider.addEventListener('input', () => { threshVal.innerText = threshSlider.value; if (loadedImg) triggerProcess(); });
+brightSlider.addEventListener('input', () => { brightVal.innerText = brightSlider.value + 'x'; if (loadedImg) triggerProcess(); });
+
+function sinc(x) {
+  if (Math.abs(x) < 1e-7) return 1.0;
+  const px = Math.PI * x;
+  return Math.sin(px) / px;
+}
+
+function lanczos3Weight(x) {
+  const ax = Math.abs(x);
+  if (ax >= 3.0) return 0.0;
+  return sinc(ax) * sinc(ax / 3.0);
+}
+
+function mitchellWeight(x) {
+  const ax = Math.abs(x);
+  const B = 1 / 3, C = 1 / 3;
+  if (ax < 1.0) {
+    return ((12 - 9 * B - 6 * C) * ax * ax * ax + (-18 + 12 * B + 6 * C) * ax * ax + (6 - 2 * B)) / 6.0;
+  } else if (ax < 2.0) {
+    return ((-B - 6 * C) * ax * ax * ax + (6 * B + 30 * C) * ax * ax + (-12 * B - 48 * C) * ax + (8 * B + 24 * C)) / 6.0;
+  }
+  return 0.0;
+}
+
+function separableResample(srcData, sw, sh, dw, dh, kernelMode) {
+  const radius = kernelMode === 'lanczos3' ? 3 : 2;
+  const weightFn = kernelMode === 'lanczos3' ? lanczos3Weight : mitchellWeight;
+  const tmp = new Float32Array(dw * sh * 3);
+  const dstData = new Uint8ClampedArray(dw * dh * 4);
+
+  // Precompute horizontal weights
+  const hWeights = new Float32Array(dw * (radius * 2 + 2));
+  const hIndices = new Int32Array(dw * (radius * 2 + 2));
+  const tapCount = radius * 2 + 1;
+
+  for (let x = 0; x < dw; x++) {
+    const center = (x + 0.5) * (sw / dw) - 0.5;
+    const left = Math.floor(center);
+    let sum = 0;
+    const baseOffset = x * tapCount;
+    for (let k = 0; k < tapCount; k++) {
+      const idx = left - radius + 1 + k;
+      const w = weightFn(center - idx);
+      hWeights[baseOffset + k] = w;
+      hIndices[baseOffset + k] = Math.max(0, Math.min(sw - 1, idx));
+      sum += w;
+    }
+    const invSum = sum > 1e-6 ? 1.0 / sum : 1.0;
+    for (let k = 0; k < tapCount; k++) hWeights[baseOffset + k] *= invSum;
+  }
+
+  // Pass 1: Horizontal Convolution
+  for (let y = 0; y < sh; y++) {
+    const srcRow = y * sw * 4;
+    const tmpRow = y * dw * 3;
+    for (let x = 0; x < dw; x++) {
+      let r = 0, g = 0, b = 0;
+      const baseOffset = x * tapCount;
+      for (let k = 0; k < tapCount; k++) {
+        const w = hWeights[baseOffset + k];
+        const sIdx = srcRow + hIndices[baseOffset + k] * 4;
+        r += srcData[sIdx] * w;
+        g += srcData[sIdx + 1] * w;
+        b += srcData[sIdx + 2] * w;
+      }
+      const tIdx = tmpRow + x * 3;
+      tmp[tIdx] = r;
+      tmp[tIdx + 1] = g;
+      tmp[tIdx + 2] = b;
+    }
+  }
+
+  // Pass 2: Vertical Convolution
+  for (let y = 0; y < dh; y++) {
+    const center = (y + 0.5) * (sh / dh) - 0.5;
+    const top = Math.floor(center);
+    const vWeights = new Float32Array(tapCount);
+    const vIndices = new Int32Array(tapCount);
+    let sum = 0;
+    for (let k = 0; k < tapCount; k++) {
+      const idx = top - radius + 1 + k;
+      const w = weightFn(center - idx);
+      vWeights[k] = w;
+      vIndices[k] = Math.max(0, Math.min(sh - 1, idx)) * dw * 3;
+      sum += w;
+    }
+    const invSum = sum > 1e-6 ? 1.0 / sum : 1.0;
+    for (let k = 0; k < tapCount; k++) vWeights[k] *= invSum;
+
+    const dstRow = y * dw * 4;
+    for (let x = 0; x < dw; x++) {
+      let r = 0, g = 0, b = 0;
+      const xOff = x * 3;
+      for (let k = 0; k < tapCount; k++) {
+        const w = vWeights[k];
+        const tIdx = vIndices[k] + xOff;
+        r += tmp[tIdx] * w;
+        g += tmp[tIdx + 1] * w;
+        b += tmp[tIdx + 2] * w;
+      }
+      const dIdx = dstRow + x * 4;
+      dstData[dIdx] = r;
+      dstData[dIdx + 1] = g;
+      dstData[dIdx + 2] = b;
+      dstData[dIdx + 3] = 255;
+    }
+  }
+  return dstData;
+}
+
+function triggerProcess() {
+  telemetry.style.display = 'block';
+  telemetry.innerHTML = 'COMPUTING: Executing Separable Convolution & Edge-Guided Unsharp...';
+  requestAnimationFrame(() => requestAnimationFrame(processImage));
+}
 
 function processImage() {
+  const t0 = performance.now();
   const scale = parseInt(scaleSelect.value, 10);
+  const kernelMode = kernelSelect.value;
   const sharpenAmount = parseFloat(sharpSlider.value);
+  const edgeThreshold = parseFloat(threshSlider.value);
   const brightness = parseFloat(brightSlider.value);
   const autoEnhance = autoEnhanceToggle.checked;
 
   const w0 = loadedImg.width, h0 = loadedImg.height;
-  const w = w0 * scale, h = h0 * scale;
+  let w = w0 * scale, h = h0 * scale;
+  if (w * h > MAX_PIXELS) {
+    const ratio = Math.sqrt(MAX_PIXELS / (w * h));
+    w = Math.floor(w * ratio);
+    h = Math.floor(h * ratio);
+  }
 
   canvas.width = w; canvas.height = h;
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(loadedImg, 0, 0, w, h);
 
-  // Optional Auto-Levels adjustment
+  if (kernelMode === 'native' || scale === 1) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(loadedImg, 0, 0, w, h);
+  } else {
+    const off = document.createElement('canvas');
+    off.width = w0; off.height = h0;
+    const octx = off.getContext('2d');
+    octx.drawImage(loadedImg, 0, 0);
+    const srcPixels = octx.getImageData(0, 0, w0, h0).data;
+    const resampled = separableResample(srcPixels, w0, h0, w, h, kernelMode);
+    ctx.putImageData(new ImageData(resampled, w, h), 0, 0);
+  }
+
+  const imgData = ctx.getImageData(0, 0, w, h);
+  const d = imgData.data;
+  const totalPixels = w * h;
+
+  // 1. Robust 1% - 99% Percentile Histogram CDF Stretch
   if (autoEnhance) {
-    const imgData = ctx.getImageData(0, 0, w, h);
-    const d = imgData.data;
-    let minV = 255, maxV = 0;
+    const hist = new Uint32Array(256);
     for (let i = 0; i < d.length; i += 4) {
-      const g = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
-      if (g < minV) minV = g;
-      if (g > maxV) maxV = g;
+      const lum = Math.min(255, Math.max(0, Math.round(0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2])));
+      hist[lum]++;
     }
-    const range = (maxV - minV) || 1;
+    const lowTarget = totalPixels * 0.01;
+    const highTarget = totalPixels * 0.99;
+    let cum = 0, pLow = 0, pHigh = 255;
+    for (let i = 0; i < 256; i++) {
+      cum += hist[i];
+      if (cum >= lowTarget) { pLow = i; break; }
+    }
+    cum = 0;
+    for (let i = 0; i < 256; i++) {
+      cum += hist[i];
+      if (cum >= highTarget) { pHigh = i; break; }
+    }
+    const range = Math.max(1, pHigh - pLow);
     for (let i = 0; i < d.length; i += 4) {
-      for (let c = 0; c < 3; c++) {
-        let val = ((d[i+c] - minV) / range) * 255;
-        d[i+c] = Math.min(255, Math.max(0, val));
-      }
+      d[i]   = Math.min(255, Math.max(0, ((d[i] - pLow) / range) * 255));
+      d[i+1] = Math.min(255, Math.max(0, ((d[i+1] - pLow) / range) * 255));
+      d[i+2] = Math.min(255, Math.max(0, ((d[i+2] - pLow) / range) * 255));
     }
-    ctx.putImageData(imgData, 0, 0);
   }
 
-  // Brightness scaling
+  // 2. Non-Linear Gamma & Brightness Curve
   if (brightness !== 1.0) {
-    const imgData = ctx.getImageData(0, 0, w, h);
-    const d = imgData.data;
-    for (let i = 0; i < d.length; i += 4) {
-      d[i] = Math.min(255, d[i] * brightness);
-      d[i+1] = Math.min(255, d[i+1] * brightness);
-      d[i+2] = Math.min(255, d[i+2] * brightness);
+    const gamma = 1.0 / brightness;
+    const lut = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) {
+      lut[i] = Math.min(255, Math.max(0, Math.round(255 * Math.pow(i / 255, gamma))));
     }
-    ctx.putImageData(imgData, 0, 0);
+    for (let i = 0; i < d.length; i += 4) {
+      d[i] = lut[d[i]];
+      d[i+1] = lut[d[i+1]];
+      d[i+2] = lut[d[i+2]];
+    }
   }
 
-  // Unsharp Mask Edge Recovery Filter
+  // 3. 8-Neighbor Isotropic Laplacian + Sobel Edge-Guided Unsharp Mask
   if (sharpenAmount > 0) {
-    const srcData = ctx.getImageData(0, 0, w, h);
-    const dstData = ctx.createImageData(w, h);
-    const src = srcData.data, dst = dstData.data;
+    const srcCopy = new Uint8ClampedArray(d);
     for (let y = 1; y < h - 1; y++) {
+      const row = y * w;
+      const rowUp = (y - 1) * w;
+      const rowDn = (y + 1) * w;
       for (let x = 1; x < w - 1; x++) {
-        const idx = (y * w + x) * 4;
-        for (let c = 0; c < 3; c++) {
-          const center = src[idx + c];
-          const neighbors = (
-            src[((y - 1) * w + x) * 4 + c] +
-            src[((y + 1) * w + x) * 4 + c] +
-            src[(y * w + (x - 1)) * 4 + c] +
-            src[(y * w + (x + 1)) * 4 + c]
-          ) * 0.25;
-          const val = center + (center - neighbors) * (sharpenAmount * 4);
-          dst[idx + c] = val < 0 ? 0 : (val > 255 ? 255 : val);
+        const i00 = (rowUp + x - 1) * 4, i10 = (rowUp + x) * 4, i20 = (rowUp + x + 1) * 4;
+        const i01 = (row + x - 1) * 4,   i11 = (row + x) * 4,   i21 = (row + x + 1) * 4;
+        const i02 = (rowDn + x - 1) * 4, i12 = (rowDn + x) * 4, i22 = (rowDn + x + 1) * 4;
+
+        // Compute Sobel gradient magnitude on green/luminance channel to gate flat noise
+        const gx = (srcCopy[i20 + 1] + 2 * srcCopy[i21 + 1] + srcCopy[i22 + 1]) -
+                   (srcCopy[i00 + 1] + 2 * srcCopy[i01 + 1] + srcCopy[i02 + 1]);
+        const gy = (srcCopy[i02 + 1] + 2 * srcCopy[i12 + 1] + srcCopy[i22 + 1]) -
+                   (srcCopy[i00 + 1] + 2 * srcCopy[i10 + 1] + srcCopy[i20 + 1]);
+        const gradMag = Math.hypot(gx, gy) * 0.25;
+
+        if (gradMag > edgeThreshold) {
+          const edgeWeight = Math.min(1.0, (gradMag - edgeThreshold) / 32.0) * sharpenAmount;
+          for (let c = 0; c < 3; c++) {
+            const center = srcCopy[i11 + c];
+            // Isotropic 3x3 weighted neighborhood (cardinals 0.15, diagonals 0.10)
+            const isoAvg = (
+              (srcCopy[i10 + c] + srcCopy[i12 + c] + srcCopy[i01 + c] + srcCopy[i21 + c]) * 0.15 +
+              (srcCopy[i00 + c] + srcCopy[i20 + c] + srcCopy[i02 + c] + srcCopy[i22 + c]) * 0.10
+            );
+            const highFreq = center - isoAvg;
+            d[i11 + c] = Math.min(255, Math.max(0, center + highFreq * edgeWeight * 3.2));
+          }
         }
-        dst[idx + 3] = 255;
       }
     }
-    ctx.putImageData(dstData, 0, 0);
   }
 
-  telemetry.style.display = 'block';
-  telemetry.innerHTML = `INPUT: ${w0}x${h0} px &rarr; OUTPUT: ${w}x${h} px (${scale*scale}x Upscaled)<br>SHARPEN: ${sharpenAmount} | BRIGHTNESS: ${brightness}x<br>MODE: Universal Bicubic Super-Sample + Unsharp`;
+  ctx.putImageData(imgData, 0, 0);
+  const dt = (performance.now() - t0).toFixed(0);
+  telemetry.innerHTML =
+    `INPUT: ${w0}x${h0} px &rarr; OUTPUT: ${w}x${h} px (${scale*scale}x Pixels)<br>` +
+    `KERNEL: ${kernelMode.toUpperCase()} | SOBEL GATE: ${edgeThreshold} | TIME: ${dt}ms<br>` +
+    `MATH: Separable Convolution + 8-Neighbor Isotropic Unsharp`;
   canvas.style.display = 'block';
   controls.style.display = 'flex';
 }
@@ -190,7 +372,7 @@ document.getElementById('saveJpgBtn').addEventListener('click', () => {
   canvas.toBlob(blob => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.download = '000_UNIVERSAL_UPSCALED_PHOTO.jpg';
+    link.download = '000_UNIVERSAL_LANCZOS_UPSCALED.jpg';
     link.href = url;
     document.body.appendChild(link);
     link.click();

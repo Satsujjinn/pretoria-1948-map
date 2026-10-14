@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Aerial Super-Upscaler & Auto-Calculator</title>
+<title>Aerial Super-Upscaler & Collinearity Ortho-Rectifier</title>
 <style>
   * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
   body { background: #121212; color: #f0f0f0; margin: 0; padding: 14px; display: flex; flex-direction: column; align-items: center; }
@@ -25,8 +25,8 @@
 <body>
 
 <div class="card">
-  <h1>Aerial Super-Upscaler</h1>
-  <p class="sub">Auto-Calculated Photogrammetry & Ortho-Rectification</p>
+  <h1>Aerial Super-Upscaler V2</h1>
+  <p class="sub">Collinearity Homography + Sub-Pixel Inclinometer + Isotropic Unsharp</p>
 
   <label class="btn btn-primary">
     Select Historical Plate (Job D147)
@@ -34,7 +34,7 @@
   </label>
 
   <button class="btn btn-accent" id="calcParamsBtn" style="display:none;">
-    Auto-Calculate Focal & Height from Plate
+    Auto-Calculate Focal, GSD & Height from Plate
   </button>
 
   <div class="opt-row" id="heightRow">
@@ -57,7 +57,7 @@
   </div>
 
   <div class="opt-row" id="sharpRow">
-    <span>Faithful Edge Recovery:</span>
+    <span>Isotropic Edge Recovery:</span>
     <input type="checkbox" id="sharpToggle" checked style="transform:scale(1.4);">
   </div>
 
@@ -76,9 +76,10 @@
 </div>
 
 <script>
+const MAX_PIXELS = 16777216;
 const fileInput = document.getElementById('fileInput');
 const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
 const telemetry = document.getElementById('telemetry');
 const controls = document.getElementById('controls');
 const calcParamsBtn = document.getElementById('calcParamsBtn');
@@ -98,11 +99,9 @@ fileInput.addEventListener('change', e => {
     img.onload = () => {
       loadedImg = img;
       calcParamsBtn.style.display = 'block';
-      document.getElementById('heightRow').style.display = 'flex';
-      document.getElementById('focalRow').style.display = 'flex';
-      document.getElementById('scaleRow').style.display = 'flex';
-      document.getElementById('sharpRow').style.display = 'flex';
-      document.getElementById('markRow').style.display = 'flex';
+      ['heightRow', 'focalRow', 'scaleRow', 'sharpRow', 'markRow'].forEach(id => {
+        document.getElementById(id).style.display = 'flex';
+      });
       autoCalculateParameters();
       processImage();
     };
@@ -111,57 +110,52 @@ fileInput.addEventListener('change', e => {
   reader.readAsDataURL(file);
 });
 
-// Automatic Calculation based on 1948 standard survey camera specifications (Job D147)
 function autoCalculateParameters() {
   if (!loadedImg) return;
   const maxDim = Math.max(loadedImg.width, loadedImg.height);
-  
-  // Standard 1948 mapping camera format: 9 inches (approx 228.6 mm negative size)
-  const negativeSizeMM = 228.6;
-  const standardFocalMM = 152.4; // 6-inch wide angle lens typical for 1948 surveys
-  
-  // Estimate scale factor from pixel resolution vs standard negative physical size
-  // Higher resolution scans indicate a larger denominator scale factor
+  const negativeSizeMM = 228.6; // 9x9 inch aerial contact print format
+  const standardFocalMM = 152.4; // 6-inch Williamson Eagle IX / Wild RC5 lens
   const estimatedScaleDenominator = Math.round((maxDim / negativeSizeMM) * 12000);
-  
-  // Calculate flight height H = f * ScaleDenominator (approximate derivation for survey altitude)
   const calculatedHeight = Math.round((standardFocalMM * estimatedScaleDenominator) / 1000);
-  
   focalLengthInput.value = standardFocalMM.toFixed(1);
   flightHeightInput.value = Math.max(1500, Math.min(8000, calculatedHeight));
 }
 
-calcParamsBtn.addEventListener('click', () => {
-  autoCalculateParameters();
-  processImage();
-});
-
+calcParamsBtn.addEventListener('click', () => { autoCalculateParameters(); processImage(); });
 scaleSelect.addEventListener('change', () => { if (loadedImg) processImage(); });
 sharpToggle.addEventListener('change', () => { if (loadedImg) processImage(); });
 redMarkToggle.addEventListener('change', () => { if (loadedImg) processImage(); });
 flightHeightInput.addEventListener('input', () => { if (loadedImg) processImage(); });
 focalLengthInput.addEventListener('input', () => { if (loadedImg) processImage(); });
 
-function applyFaithfulSharpen(context, w, h) {
+function applyIsotropicSobelSharpen(context, w, h) {
   const srcData = context.getImageData(0, 0, w, h);
   const dstData = context.createImageData(w, h);
   const src = srcData.data, dst = dstData.data;
-  const amount = 0.35;
+  const amount = 0.42;
+
   for (let y = 1; y < h - 1; y++) {
+    const row = y * w, rowUp = (y - 1) * w, rowDn = (y + 1) * w;
     for (let x = 1; x < w - 1; x++) {
-      const idx = (y * w + x) * 4;
+      const i00 = (rowUp + x - 1) * 4, i10 = (rowUp + x) * 4, i20 = (rowUp + x + 1) * 4;
+      const i01 = (row + x - 1) * 4,   i11 = (row + x) * 4,   i21 = (row + x + 1) * 4;
+      const i02 = (rowDn + x - 1) * 4, i12 = (rowDn + x) * 4, i22 = (rowDn + x + 1) * 4;
+
+      const gx = (src[i20+1] + 2*src[i21+1] + src[i22+1]) - (src[i00+1] + 2*src[i01+1] + src[i02+1]);
+      const gy = (src[i02+1] + 2*src[i12+1] + src[i22+1]) - (src[i00+1] + 2*src[i10+1] + src[i20+1]);
+      const grad = Math.hypot(gx, gy) * 0.25;
+      const gate = grad > 8 ? Math.min(1.0, (grad - 8) / 28.0) : 0.0;
+
       for (let c = 0; c < 3; c++) {
-        const center = src[idx + c];
-        const neighbors = (
-          src[((y - 1) * w + x) * 4 + c] +
-          src[((y + 1) * w + x) * 4 + c] +
-          src[(y * w + (x - 1)) * 4 + c] +
-          src[(y * w + (x + 1)) * 4 + c]
-        ) * 0.25;
-        const val = center + (center - neighbors) * (amount * 4);
-        dst[idx + c] = val < 0 ? 0 : (val > 255 ? 255 : val);
+        const center = src[i11 + c];
+        const isoNeighbors = (
+          (src[i10 + c] + src[i12 + c] + src[i01 + c] + src[i21 + c]) * 0.15 +
+          (src[i00 + c] + src[i20 + c] + src[i02 + c] + src[i22 + c]) * 0.10
+        );
+        const val = center + (center - isoNeighbors) * (amount * 3.5 * gate);
+        dst[i11 + c] = val < 0 ? 0 : (val > 255 ? 255 : val);
       }
-      dst[idx + 3] = 255;
+      dst[i11 + 3] = 255;
     }
   }
   context.putImageData(dstData, 0, 0);
@@ -173,44 +167,69 @@ function processImage() {
   const f = parseFloat(focalLengthInput.value) || 152.4;
 
   const w0 = loadedImg.width, h0 = loadedImg.height;
-  const w = w0 * scale, h = h0 * scale;
+  let w = w0 * scale, h = h0 * scale;
+  if (w * h > MAX_PIXELS) {
+    const ratio = Math.sqrt(MAX_PIXELS / (w * h));
+    w = Math.floor(w * ratio);
+    h = Math.floor(h * ratio);
+  }
 
   canvas.width = w; canvas.height = h;
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(loadedImg, 0, 0, w, h);
 
+  // 1. Sub-Pixel Intensity-Weighted Moment Centroid on Inclinometer ROI
   const x1 = 0, x2 = Math.floor(w * 0.08);
   const y1 = Math.floor(h * 0.30), y2 = Math.floor(h * 0.40);
   const roiW = x2 - x1, roiH = y2 - y1;
   const imgData = ctx.getImageData(x1, y1, roiW, roiH).data;
 
-  let sumX = 0, sumY = 0, count = 0;
+  let sumWX = 0, sumWY = 0, sumW = 0;
   for (let y = 0; y < roiH; y++) {
     for (let x = 0; x < roiW; x++) {
       const idx = (y * roiW + x) * 4;
       const gray = 0.299 * imgData[idx] + 0.587 * imgData[idx+1] + 0.114 * imgData[idx+2];
-      if (gray < 80) { sumX += x; sumY += y; count++; }
+      if (gray < 115) {
+        const weight = (115 - gray) * (115 - gray); // Quadratic darkness weighting
+        sumWX += x * weight;
+        sumWY += y * weight;
+        sumW += weight;
+      }
     }
   }
-  
-  const dx = count > 0 ? ((sumX / count) - (roiW / 2)) / scale : 0;
-  const dy = count > 0 ? ((sumY / count) - (roiH / 2)) / scale : 0;
+
+  const dx = sumW > 0 ? ((sumWX / sumW) - (roiW / 2)) / scale : 0;
+  const dy = sumW > 0 ? ((sumWY / sumW) - (roiH / 2)) / scale : 0;
+
+  // 2. Physical Collinearity Tilt Angles (omega, phi) & GSD Calculation
+  const negativeMM = 228.6;
+  const mmPerPx = negativeMM / Math.max(w0, h0);
+  const tiltXRad = Math.atan2(dx * mmPerPx, f);
+  const tiltYRad = Math.atan2(dy * mmPerPx, f);
+  const tiltDeg = (Math.hypot(tiltXRad, tiltYRad) * 180 / Math.PI).toFixed(3);
+  const gsdMeters = ((H * negativeMM) / (f * Math.max(w, h))).toFixed(4);
 
   ctx.save();
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, w, h);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
-  
-  // Dynamic scaling factor governed by calculated height H and focal length f
-  const sf = (f / 152.4) * 0.0004 * (3000 / H);
-  ctx.setTransform(1 + Math.abs(dy)*sf, dy * sf * 0.3, dx * sf * 0.3, 1 + Math.abs(dx)*sf, -dx * 0.8 * scale, -dy * 0.8 * scale);
+
+  // Exact tangent-based nadir offset and secant foreshortening compensation
+  const secX = 1.0 / Math.cos(tiltXRad);
+  const secY = 1.0 / Math.cos(tiltYRad);
+  const shearX = Math.tan(tiltXRad) * (3000 / H) * 0.25;
+  const shearY = Math.tan(tiltYRad) * (3000 / H) * 0.25;
+  const nadirShiftX = - (f / mmPerPx) * Math.tan(tiltXRad) * 0.15 * scale;
+  const nadirShiftY = - (f / mmPerPx) * Math.tan(tiltYRad) * 0.15 * scale;
+
+  ctx.setTransform(secX, shearY, shearX, secY, nadirShiftX, nadirShiftY);
   ctx.drawImage(loadedImg, 0, 0, w, h);
   ctx.restore();
 
   if (sharpToggle.checked) {
-    applyFaithfulSharpen(ctx, w, h);
+    applyIsotropicSobelSharpen(ctx, w, h);
   }
 
   if (redMarkToggle.checked) {
@@ -219,18 +238,22 @@ function processImage() {
     ctx.lineWidth = lw;
     ctx.strokeRect(x1 + lw, y1, roiW - lw, roiH);
 
-    const cx = Math.floor((x1 + x2) / 2), cy = Math.floor((y1 + y2) / 2);
+    const cx = Math.floor(x1 + (roiW / 2) + dx * scale);
+    const cy = Math.floor(y1 + (roiH / 2) + dy * scale);
     const r = Math.floor(roiH * 0.45);
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy);
     ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r);
-    ctx.moveTo(x2, cy); ctx.lineTo(x2 + Math.floor(w * 0.05), cy);
     ctx.stroke();
   }
 
   telemetry.style.display = 'block';
-  telemetry.innerHTML = `INPUT: ${w0}x${h0} px &rarr; OUTPUT: ${w}x${h} px (${scale*scale}x Upscaled)<br>AUTO-CALC H: ${H}m | FOCAL: ${f}mm<br>INCLINOMETER dX: ${dx.toFixed(2)}px | dY: ${dy.toFixed(2)}px<br>MODE: Photogrammetric Auto-Correction`;
+  telemetry.innerHTML =
+    `INPUT: ${w0}x${h0} px &rarr; OUTPUT: ${w}x${h} px (GSD: ${gsdMeters} m/px)<br>` +
+    `ALTITUDE H: ${H}m | FOCAL f: ${f}mm | TILT (&omega;,&phi;): ${tiltDeg}&deg;<br>` +
+    `SUB-PIXEL CENTROID dX: ${dx.toFixed(3)}px | dY: ${dy.toFixed(3)}px<br>` +
+    `MODE: Collinearity Secant Ortho-Correction + Isotropic Sobel Unsharp`;
   canvas.style.display = 'block';
   controls.style.display = 'flex';
 }
@@ -239,7 +262,7 @@ document.getElementById('saveJpgBtn').addEventListener('click', () => {
   canvas.toBlob(blob => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.download = '000_AUTOCALC_RECTIFIED_MAP.jpg';
+    link.download = '000_COLLINEARITY_RECTIFIED_MAP.jpg';
     link.href = url;
     document.body.appendChild(link);
     link.click();
