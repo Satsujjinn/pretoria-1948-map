@@ -3,138 +3,322 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>THE LEON APP — Axiom-Verified Mathematical Super-Resolution</title>
+<title>The Leon App - Axiomatic Super-Resolution</title>
 <style>
-  * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
-  body { background: #070709; color: #f0f0f4; margin: 0; padding: 12px; display: flex; flex-direction: column; align-items: center; }
-  .card { background: #131318; border: 1px solid #282834; border-radius: 14px; padding: 16px; width: 100%; max-width: 540px; box-shadow: 0 12px 34px rgba(0,0,0,0.75); margin-bottom: 14px; }
-  .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-  h1 { font-size: 21px; margin: 0; color: #00e676; font-weight: 900; letter-spacing: 0.4px; }
-  .badge { background: #003d33; color: #00e676; border: 1px solid #00e676; font-family: monospace; font-size: 10px; padding: 3px 7px; border-radius: 5px; font-weight: 800; }
-  p.sub { font-size: 12px; color: #a0a0b0; margin: 0 0 12px 0; line-height: 1.4; }
-  
-  .axiom-box { background: #050507; border: 1px solid #1e3a2f; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 11px; color: #b9f6ca; margin-bottom: 12px; line-height: 1.55; }
-  .axiom-pass { color: #00e676; font-weight: bold; }
-  
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-  label.btn, button.btn { display: flex; align-items: center; justify-content: center; width: 100%; padding: 12px 10px; border-radius: 10px; border: none; font-size: 13.5px; font-weight: 800; text-align: center; cursor: pointer; margin-bottom: 8px; }
-  .btn-primary { background: #00e676; color: #000; }
-  .btn-accent { background: #ffb300; color: #000; }
-  .btn-secondary { background: #23232c; color: #fff; border: 1px solid #3c3c4a; }
+  * { box-sizing: border-box; }
+  body {
+    background-color: #101418;
+    color: #eaecf0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+  }
+  .mw-page-container {
+    background-color: #181c22;
+    border: 1px solid #3a3f47;
+    width: 100%;
+    max-width: 720px;
+    padding: 20px 24px 28px 24px;
+  }
+  h1.firstHeading {
+    font-family: "Linux Libertine", "Georgia", "Times", "Source Serif Pro", serif;
+    font-size: 28px;
+    font-weight: normal;
+    color: #ffffff;
+    border-bottom: 1px solid #3a3f47;
+    margin: 0 0 4px 0;
+    padding-bottom: 4px;
+    line-height: 1.25;
+  }
+  .siteSub {
+    font-size: 12.5px;
+    color: #a2a9b1;
+    margin-bottom: 14px;
+    font-style: italic;
+  }
+  .hatnote {
+    background-color: #20242c;
+    border-left: 3px solid #6b9eff;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #c8ccd1;
+    margin-bottom: 16px;
+  }
+  h2.mw-headline {
+    font-family: "Linux Libertine", "Georgia", "Times", "Source Serif Pro", serif;
+    font-size: 20px;
+    font-weight: normal;
+    color: #ffffff;
+    border-bottom: 1px solid #3a3f47;
+    margin: 22px 0 10px 0;
+    padding-bottom: 3px;
+  }
+  table.wikitable {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #20242c;
+    color: #eaecf0;
+    margin: 10px 0 16px 0;
+    font-size: 13px;
+  }
+  table.wikitable th, table.wikitable td {
+    border: 1px solid #3a3f47;
+    padding: 7px 10px;
+    text-align: left;
+    vertical-align: middle;
+  }
+  table.wikitable th {
+    background-color: #272c36;
+    color: #ffffff;
+    font-weight: 600;
+  }
+  .mono {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 12px;
+  }
+  .status-pass {
+    color: #72d592;
+    font-weight: 600;
+  }
+  .status-warn {
+    color: #f0b45b;
+    font-weight: 600;
+  }
+  .btn-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  label.mw-btn, button.mw-btn {
+    display: inline-block;
+    width: 100%;
+    padding: 9px 12px;
+    background-color: #272c36;
+    color: #eaecf0;
+    border: 1px solid #54595d;
+    border-radius: 2px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.12s, border-color 0.12s;
+  }
+  label.mw-btn:hover, button.mw-btn:hover {
+    background-color: #323946;
+    border-color: #72777d;
+  }
+  .mw-btn-progressive {
+    background-color: #2a4b8d !important;
+    border-color: #4b77d1 !important;
+    color: #ffffff !important;
+  }
+  .mw-btn-progressive:hover {
+    background-color: #3359a6 !important;
+  }
   input[type="file"] { display: none; }
-  
-  .section-hdr { font-size: 11px; font-weight: 800; color: #80cbc4; text-transform: uppercase; letter-spacing: 0.8px; margin: 12px 0 6px 0; border-bottom: 1px solid #262630; padding-bottom: 4px; }
-  .opt-row { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; margin-bottom: 6px; background: #1c1c24; padding: 8px 11px; border-radius: 8px; border: 1px solid #282834; }
-  select { background: #0e0e12; color: #00e676; border: 1px solid #444; padding: 5px 8px; border-radius: 6px; font-weight: 700; width: 170px; font-size: 12px; }
-  input[type="range"] { accent-color: #00e676; width: 42%; }
-  .val-display { font-family: monospace; color: #00e676; font-size: 12px; width: 52px; text-align: right; font-weight: bold; }
-  
-  .telemetry { background: #050507; border: 1px solid #00e676; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 11.5px; color: #00e676; margin: 10px 0; display: none; line-height: 1.55; }
-  .wipe-bar { display: none; align-items: center; gap: 8px; background: #1a1a22; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #333; font-size: 12px; }
-  .wipe-bar input { flex: 1; accent-color: #ffb300; }
-  
-  .canvas-wrap { position: relative; width: 100%; display: none; margin-bottom: 12px; border-radius: 8px; overflow: hidden; border: 1px solid #383846; background: #000; }
-  canvas { width: 100%; display: block; }
-  .controls { display: none; gap: 8px; flex-direction: column; }
+  select {
+    background-color: #101418;
+    color: #eaecf0;
+    border: 1px solid #54595d;
+    padding: 5px 8px;
+    border-radius: 2px;
+    width: 100%;
+    font-size: 13px;
+  }
+  .slider-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  input[type="range"] {
+    flex: 1;
+    accent-color: #6b9eff;
+  }
+  .val-cell {
+    font-family: monospace;
+    font-size: 12.5px;
+    color: #6b9eff;
+    min-width: 54px;
+    text-align: right;
+  }
+  .thumb {
+    background-color: #12161b;
+    border: 1px solid #3a3f47;
+    padding: 8px;
+    margin-top: 12px;
+    display: none;
+  }
+  .thumb canvas {
+    width: 100%;
+    display: block;
+    border: 1px solid #2b3038;
+    background: #000000;
+  }
+  .thumbcaption {
+    font-size: 12px;
+    color: #a2a9b1;
+    padding: 8px 4px 2px 4px;
+    line-height: 1.45;
+  }
+  .wipe-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid #2b3038;
+    margin-bottom: 8px;
+    font-size: 12.5px;
+    color: #c8ccd1;
+  }
+  .footer-meta {
+    margin-top: 24px;
+    padding-top: 10px;
+    border-top: 1px solid #3a3f47;
+    font-size: 11.5px;
+    color: #888f98;
+  }
 </style>
 </head>
 <body>
 
-<div class="card">
-  <div class="header-row">
-    <h1>THE LEON APP</h1>
-    <span class="badge" id="axiomBadge">VERIFYING AXIOMS...</span>
+<div class="mw-page-container">
+  <h1 class="firstHeading">The Leon App</h1>
+  <div class="siteSub">From The Leon App, the axiomatic mathematical super-resolution engine</div>
+
+  <div class="hatnote">
+    <strong>Mathematical Architecture:</strong> Deterministic single-frame super-resolution operating in linear IEC 61966-2-1 photon space, driven by 2D Structure Tensor eigenvector steering, convex-hull monotonicity clamping, and monotone backtracking Iterative Back-Projection (IBP).
   </div>
-  <p class="sub">Axiomatic Float64/Float32 Super-Resolution &bull; 2D Structure Tensor Steering &bull; Monotone Backtracking IBP</p>
 
-  <div class="axiom-box" id="axiomLog">Running mathematical self-verification suite...</div>
+  <h2 class="mw-headline">1. Axiomatic Verification Matrix</h2>
+  <table class="wikitable">
+    <thead>
+      <tr>
+        <th>Axiom</th>
+        <th>Mathematical Invariant</th>
+        <th>Measured Residual</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="axiomTableBody" class="mono">
+      <tr><td colspan="4">Executing Float64 verification suite...</td></tr>
+    </tbody>
+  </table>
 
-  <div class="grid-2">
-    <label class="btn btn-primary" style="margin-bottom:0;">
-      📁 Load Photo / Plate
+  <h2 class="mw-headline">2. Source Input &amp; Reference Manifold</h2>
+  <div class="btn-group">
+    <label class="mw-btn mw-btn-progressive">
+      Load Image File
       <input type="file" id="fileInput" accept="image/*">
     </label>
-    <button class="btn btn-accent" id="synthBtn" style="margin-bottom:0;">
-      🔬 Test Synthetic Target
+    <button class="mw-btn" id="synthBtn">
+      Load Synthetic Test Manifold
     </button>
   </div>
 
-  <div class="section-hdr">1. Axiomatic Basis & Tensor Geometry</div>
+  <h2 class="mw-headline">3. Mathematical Parameters</h2>
+  <table class="wikitable">
+    <tbody>
+      <tr>
+        <th style="width:42%;">Target Super-Resolution Factor</th>
+        <td>
+          <select id="scaleSelect">
+            <option value="1">1x (Optical Deconvolution &amp; Restoration Only)</option>
+            <option value="2" selected>2x (4x Spatial Density)</option>
+            <option value="3">3x (9x Spatial Density)</option>
+            <option value="4">4x (16x Maximum Archival Density)</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <th>Orthogonal Interpolation Basis</th>
+        <td>
+          <select id="kernelSelect">
+            <option value="lanczos4" selected>Lanczos-4 (8-Tap Windowed Sinc)</option>
+            <option value="lanczos3">Lanczos-3 (6-Tap Windowed Sinc)</option>
+            <option value="mitchell">Mitchell-Netravali Cubic Spline</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <th>2D Structure Tensor Steering</th>
+        <td>
+          <div class="slider-wrap">
+            <input type="range" id="tensorSlider" min="0" max="1.0" step="0.05" value="0.80">
+            <span class="val-cell" id="tensorVal">0.80</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <th>Gibbs Convex-Hull Clamp</th>
+        <td>
+          <div class="slider-wrap">
+            <input type="range" id="ringSlider" min="0" max="1.0" step="0.05" value="0.90">
+            <span class="val-cell" id="ringVal">0.90</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <th>IBP Contraction Iterations</th>
+        <td>
+          <div class="slider-wrap">
+            <input type="range" id="ibpSlider" min="0" max="6" step="1" value="3">
+            <span class="val-cell" id="ibpVal">3 iter</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <th>Richardson-Lucy Deconvolution</th>
+        <td>
+          <div class="slider-wrap">
+            <input type="range" id="rlSlider" min="0" max="1.0" step="0.05" value="0.45">
+            <span class="val-cell" id="rlVal">0.45</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <th>Perona-Malik Conductance Gate</th>
+        <td>
+          <div class="slider-wrap">
+            <input type="range" id="denoiseSlider" min="0" max="30" step="2" value="8">
+            <span class="val-cell" id="denoiseVal">8</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <th>1%–99% Quantile CDF Stretch</th>
+        <td>
+          <input type="checkbox" id="cdfToggle" checked> Enable Robust Luminance Normalization
+        </td>
+      </tr>
+    </tbody>
+  </table>
 
-  <div class="opt-row">
-    <span>Upscale Factor:</span>
-    <select id="scaleSelect">
-      <option value="1">1x (Deconvolve & Restore)</option>
-      <option value="2" selected>2x (4x Pixel Density)</option>
-      <option value="3">3x (9x Pixel Density)</option>
-      <option value="4">4x (16x Archival Max)</option>
-    </select>
-  </div>
-
-  <div class="opt-row">
-    <span>Orthogonal Kernel:</span>
-    <select id="kernelSelect">
-      <option value="lanczos4" selected>Lanczos-4 (8-Tap Sinc)</option>
-      <option value="lanczos3">Lanczos-3 (6-Tap Sinc)</option>
-      <option value="mitchell">Mitchell-Netravali Cubic</option>
-    </select>
-  </div>
-
-  <div class="opt-row">
-    <span>2D Tensor Steering:</span>
-    <input type="range" id="tensorSlider" min="0" max="1.0" step="0.05" value="0.80">
-    <span class="val-display" id="tensorVal">0.80</span>
-  </div>
-
-  <div class="opt-row">
-    <span>Convex Hull Clamp:</span>
-    <input type="range" id="ringSlider" min="0" max="1.0" step="0.05" value="0.90">
-    <span class="val-display" id="ringVal">0.90</span>
-  </div>
-
-  <div class="section-hdr">2. Monotone Inverse Reconstruction</div>
-
-  <div class="opt-row">
-    <span>IBP Contraction Loops:</span>
-    <input type="range" id="ibpSlider" min="0" max="6" step="1" value="3">
-    <span class="val-display" id="ibpVal">3 iter</span>
-  </div>
-
-  <div class="opt-row">
-    <span>Richardson-Lucy PSF:</span>
-    <input type="range" id="rlSlider" min="0" max="1.0" step="0.05" value="0.45">
-    <span class="val-display" id="rlVal">0.45</span>
-  </div>
-
-  <div class="opt-row">
-    <span>Perona-Malik Gate:</span>
-    <input type="range" id="denoiseSlider" min="0" max="30" step="2" value="8">
-    <span class="val-display" id="denoiseVal">8</span>
-  </div>
-
-  <div class="opt-row">
-    <span>1%-99% Quantile Stretch:</span>
-    <input type="checkbox" id="cdfToggle" checked style="transform:scale(1.4);">
-  </div>
-
-  <button class="btn btn-primary" id="runBtn" style="margin-top:6px;">
-    ⚡ Execute Leon Axiomatic Reconstruction
+  <button class="mw-btn mw-btn-progressive" id="runBtn">
+    Execute Axiomatic Reconstruction
   </button>
 
-  <div id="telemetry" class="telemetry"></div>
-
-  <div class="wipe-bar" id="wipeBar">
-    <span style="color:#ffb300;font-weight:bold;">Wipe (Left: LEON vs Right: Nearest):</span>
-    <input type="range" id="wipeSlider" min="0" max="100" value="75">
-  </div>
-
-  <div class="canvas-wrap" id="canvasWrap">
+  <h2 class="mw-headline">4. Output &amp; Telemetry</h2>
+  <div class="thumb" id="outputFrame">
+    <div class="wipe-control">
+      <span>Split Comparison Partition (Left: Leon Reconstruction | Right: Nearest-Neighbor):</span>
+      <input type="range" id="wipeSlider" min="0" max="100" value="75">
+    </div>
     <canvas id="canvas"></canvas>
+    <div class="thumbcaption mono" id="telemetry"></div>
   </div>
 
-  <div id="controls" class="controls">
-    <button class="btn btn-primary" id="savePngBtn">💾 Download Lossless PNG</button>
-    <button class="btn btn-secondary" id="saveJpgBtn">💾 Download Archival JPG (99%)</button>
+  <div class="btn-group" id="controls" style="display:none;">
+    <button class="mw-btn mw-btn-progressive" id="savePngBtn">Download Lossless PNG</button>
+    <button class="mw-btn" id="saveJpgBtn">Download Archival JPEG (99%)</button>
+  </div>
+
+  <div class="footer-meta">
+    The Leon App &bull; Deterministic Numerical Analysis &amp; Computational Photogrammetry Engine &bull; MIT License
   </div>
 </div>
 
@@ -146,11 +330,9 @@ const runBtn = document.getElementById('runBtn');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 const telemetry = document.getElementById('telemetry');
-const axiomLog = document.getElementById('axiomLog');
-const axiomBadge = document.getElementById('axiomBadge');
-const wipeBar = document.getElementById('wipeBar');
+const axiomTableBody = document.getElementById('axiomTableBody');
+const outputFrame = document.getElementById('outputFrame');
 const wipeSlider = document.getElementById('wipeSlider');
-const canvasWrap = document.getElementById('canvasWrap');
 const controls = document.getElementById('controls');
 
 const scaleSelect = document.getElementById('scaleSelect');
@@ -166,7 +348,7 @@ let sourceCanvas = null;
 let leonImageData = null;
 let naiveImageData = null;
 
-// --- EXACT IEC 61966-2-1 BIJECTIVE PHOTON TRANSFER ---
+// Exact IEC 61966-2-1 Bijective Photon Transfer
 const srgbToLinearLUT = new Float64Array(256);
 for (let i = 0; i < 256; i++) {
   const c = i / 255.0;
@@ -180,7 +362,6 @@ function linearToSrgbByte(lin) {
   return Math.min(255, Math.max(0, Math.round(c * 255.0)));
 }
 
-// --- MATHEMATICAL KERNEL BASIS ---
 function sinc(x) {
   if (Math.abs(x) < 1e-12) return 1.0;
   const px = Math.PI * x;
@@ -200,12 +381,10 @@ function kernelEval(x, mode) {
   }
 }
 
-// --- SELF-TESTING AXIOM SUITE (RUNS ON BOOT) ---
 function runAxiomSelfTests() {
-  let logs = [];
-  let allPass = true;
+  const rows = [];
 
-  // Test Axiom I: Partition of Unity across 100 sub-pixel phases
+  // Axiom I: Partition of Unity
   let maxUnityErr = 0.0;
   for (let p = 0; p < 100; p++) {
     const phi = p / 100.0;
@@ -220,30 +399,27 @@ function runAxiomSelfTests() {
     maxUnityErr = Math.max(maxUnityErr, Math.abs(normSum - 1.0));
   }
   const pass1 = maxUnityErr < 1e-14;
-  allPass = allPass && pass1;
-  logs.push(`AXIOM I   (Partition of Unity):     |Σw - 1| = ${maxUnityErr.toExponential(2)} [${pass1 ? 'PASS' : 'FAIL'}]`);
+  rows.push(`<tr><td>I</td><td>Partition of Unity (&Sigma;w = 1)</td><td>${maxUnityErr.toExponential(2)}</td><td class="${pass1 ? 'status-pass' : 'status-warn'}">${pass1 ? 'Verified' : 'Deviation'}</td></tr>`);
 
-  // Test Axiom II: Bijective Photon LUT Invertibility
+  // Axiom II: Bijective Photon LUT Invertibility
   let maxLutErr = 0;
   for (let v = 0; v < 256; v++) {
     const rt = linearToSrgbByte(srgbToLinearLUT[v]);
     maxLutErr = Math.max(maxLutErr, Math.abs(rt - v));
   }
   const pass2 = maxLutErr === 0;
-  allPass = allPass && pass2;
-  logs.push(`AXIOM II  (Photon Bijection 0..255): MaxErr  = ${maxLutErr} LSB       [${pass2 ? 'PASS' : 'FAIL'}]`);
+  rows.push(`<tr><td>II</td><td>IEC 61966-2-1 Photon Bijection</td><td>${maxLutErr} LSB</td><td class="${pass2 ? 'status-pass' : 'status-warn'}">${pass2 ? 'Verified' : 'Deviation'}</td></tr>`);
 
-  // Test Axiom III: Structure Tensor Orthonormality & PSD
+  // Axiom III: Structure Tensor PSD & Orthonormality
   const gx = 0.42, gy = -0.71;
   const j11 = gx * gx, j22 = gy * gy, j12 = gx * gy;
   const tr = j11 + j22, det = Math.hypot(j11 - j22, 2.0 * j12);
   const l1 = 0.5 * (tr + det), l2 = 0.5 * (tr - det);
   const orthoDot = (gx * (-gy) + gy * gx);
   const pass3 = (l1 >= l2) && (l2 >= -1e-15) && (Math.abs(orthoDot) < 1e-15);
-  allPass = allPass && pass3;
-  logs.push(`AXIOM III (Tensor Orthonormality):  e1·e2    = ${orthoDot.toFixed(1)}         [${pass3 ? 'PASS' : 'FAIL'}]`);
+  rows.push(`<tr><td>III</td><td>Structure Tensor Orthonormality (e1&middot;e2 = 0)</td><td>${orthoDot.toFixed(1)}</td><td class="${pass3 ? 'status-pass' : 'status-warn'}">${pass3 ? 'Verified' : 'Deviation'}</td></tr>`);
 
-  // Test Axiom IV: Convex Hull Step Edge Monotonicity (Zero Overshoot)
+  // Axiom IV: Convex Hull Monotonicity
   const stepLR = new Float32Array(16 * 16);
   for (let i = 0; i < 256; i++) stepLR[i] = (i % 16) >= 8 ? 1.0 : 0.0;
   const stepHR = resampleChannelFloat32(stepLR, 16, 16, 32, 32, 'lanczos4', 1.0);
@@ -253,20 +429,16 @@ function runAxiomSelfTests() {
     if (stepHR[i] < 0.0) overshoot = Math.max(overshoot, -stepHR[i]);
   }
   const pass4 = overshoot < 1e-7;
-  allPass = allPass && pass4;
-  logs.push(`AXIOM IV  (Gibbs Hull Clamp):       Overshoot= ${overshoot.toExponential(2)} [${pass4 ? 'PASS' : 'FAIL'}]`);
+  rows.push(`<tr><td>IV</td><td>Convex-Hull Maximum Principle</td><td>${overshoot.toExponential(2)}</td><td class="${pass4 ? 'status-pass' : 'status-warn'}">${pass4 ? 'Verified' : 'Deviation'}</td></tr>`);
 
-  // Test Axiom V: IBP Monotone Residual Contraction
+  // Axiom V: IBP Monotone Residual Contraction
   const ibpRes = applyIterativeBackProjection(stepHR, stepLR, 16, 16, 32, 32, 3);
   const pass5 = ibpRes.finalErr <= ibpRes.initErr + 1e-7;
-  allPass = allPass && pass5;
-  logs.push(`AXIOM V   (IBP L2 Contraction):     ${ibpRes.initErr.toFixed(4)} -> ${ibpRes.finalErr.toFixed(4)} [${pass5 ? 'PASS' : 'FAIL'}]`);
+  rows.push(`<tr><td>V</td><td>IBP L2 Contraction Mapping</td><td>${ibpRes.initErr.toFixed(4)} &rarr; ${ibpRes.finalErr.toFixed(4)}</td><td class="${pass5 ? 'status-pass' : 'status-warn'}">${pass5 ? 'Verified' : 'Deviation'}</td></tr>`);
 
-  axiomLog.innerHTML = logs.join('<br>');
-  axiomBadge.textContent = allPass ? '5/5 AXIOMS VERIFIED' : 'AXIOM WARNING';
+  axiomTableBody.innerHTML = rows.join('');
 }
 
-// --- SEPARABLE FLOAT32 RESAMPLER WITH EXACT PARTITION OF UNITY & HULL CLAMP ---
 function resampleChannelFloat32(src, sw, sh, dw, dh, mode, hullClamp) {
   const radius = mode === 'lanczos4' ? 4 : (mode === 'lanczos3' ? 3 : 2);
   const taps = radius * 2 + 1;
@@ -347,7 +519,6 @@ function resampleChannelFloat32(src, sw, sh, dw, dh, mode, hullClamp) {
   return dst;
 }
 
-// --- SMOOTHED 2D STRUCTURE TENSOR & SUB-PIXEL BILINEAR TANGENT ADVECTION ---
 function applyStructureTensorSteering(Y, w, h, strength) {
   if (strength <= 0) return Y;
   const out = new Float32Array(Y);
@@ -367,7 +538,6 @@ function applyStructureTensorSteering(Y, w, h, strength) {
   for (let y = 1; y < h - 1; y++) {
     const rUp = (y - 1) * w, rMid = y * w, rDn = (y + 1) * w;
     for (let x = 1; x < w - 1; x++) {
-      // Rotational-symmetry Scharr derivatives
       const ix = (
         3 * (Y[rUp + x + 1] - Y[rUp + x - 1]) +
         10 * (Y[rMid + x + 1] - Y[rMid + x - 1]) +
@@ -391,7 +561,6 @@ function applyStructureTensorSteering(Y, w, h, strength) {
         const tx = -iy / norm;
         const ty = ix / norm;
 
-        // True sub-pixel bilinear sampling along exact unit tangent vector
         const fPos = sampleBilinear(x + tx * 0.85, y + ty * 0.85);
         const fNeg = sampleBilinear(x - tx * 0.85, y - ty * 0.85);
         const steered = 0.5 * Y[rMid + x] + 0.25 * (fPos + fNeg);
@@ -403,7 +572,6 @@ function applyStructureTensorSteering(Y, w, h, strength) {
   return out;
 }
 
-// --- PERONA-MALIK ANISOTROPIC CONDUCTANCE ---
 function applyPeronaMalikDiffusion(Y, w, h, kappaInt) {
   if (kappaInt <= 0) return Y;
   const kappa = kappaInt / 255.0;
@@ -442,7 +610,6 @@ function gaussianBlur3x3(src, w, h) {
   return dst;
 }
 
-// --- MONOTONE BACKTRACKING ITERATIVE BACK-PROJECTION (AXIOM V) ---
 function applyIterativeBackProjection(Y_hr, Y_lr, sw, sh, dw, dh, iterations) {
   let currentHR = new Float32Array(Y_hr);
   const errLR = new Float32Array(sw * sh);
@@ -472,7 +639,6 @@ function applyIterativeBackProjection(Y_hr, Y_lr, sw, sh, dw, dh, iterations) {
     }
     const trialErr = computeError(trialHR);
 
-    // Enforce strict contraction mapping: only accept if L2 sensor error decreases
     if (trialErr < currentErr) {
       currentHR = trialHR;
       currentErr = trialErr;
@@ -484,7 +650,6 @@ function applyIterativeBackProjection(Y_hr, Y_lr, sw, sh, dw, dh, iterations) {
   return { data: currentHR, initErr, finalErr: currentErr };
 }
 
-// --- RICHARDSON-LUCY MULTIPLICATIVE DECONVOLUTION ---
 function applyRichardsonLucy(Y, w, h, strength) {
   if (strength <= 0) return Y;
   const blurred = gaussianBlur3x3(Y, w, h);
@@ -501,17 +666,14 @@ function applyRichardsonLucy(Y, w, h, strength) {
   return out;
 }
 
-// --- SYNTHETIC SIEMENS STAR & ARCHITECTURAL TEST TARGET GENERATOR ---
 function generateSyntheticTestTarget() {
   const c = document.createElement('canvas');
   c.width = 240; c.height = 180;
   const cx = c.getContext('2d');
 
-  // Deep architectural background
   cx.fillStyle = '#141820';
   cx.fillRect(0, 0, 240, 180);
 
-  // Diagonal micro-grid lines (tests 2D Structure Tensor diagonal steering)
   cx.strokeStyle = '#e0e6ed';
   cx.lineWidth = 1.2;
   for (let i = -100; i < 240; i += 14) {
@@ -521,14 +683,13 @@ function generateSyntheticTestTarget() {
     cx.stroke();
   }
 
-  // Siemens Star radial resolution target
   const centerX = 75, centerY = 90, radius = 58;
   cx.fillStyle = '#0c0e12';
   cx.beginPath(); cx.arc(centerX, centerY, radius + 4, 0, Math.PI * 2); cx.fill();
   for (let a = 0; a < 36; a++) {
     const t0 = (a * 2 * Math.PI) / 36;
     const t1 = ((a + 0.5) * 2 * Math.PI) / 36;
-    cx.fillStyle = '#00e676';
+    cx.fillStyle = '#d8dde6';
     cx.beginPath();
     cx.moveTo(centerX, centerY);
     cx.arc(centerX, centerY, radius, t0, t1);
@@ -536,15 +697,14 @@ function generateSyntheticTestTarget() {
     cx.fill();
   }
 
-  // High-contrast step blocks & typography
   cx.fillStyle = '#ffffff';
   cx.fillRect(150, 22, 72, 55);
   cx.fillStyle = '#000000';
   cx.fillRect(164, 34, 44, 31);
-  cx.fillStyle = '#ffb300';
-  cx.font = 'bold 13px monospace';
+  cx.fillStyle = '#ffffff';
+  cx.font = 'bold 13px Georgia, serif';
   cx.fillText('LEON 1948', 150, 110);
-  cx.fillStyle = '#80cbc4';
+  cx.fillStyle = '#a2a9b1';
   cx.font = '10px sans-serif';
   cx.fillText('AXIOM TARGET', 150, 130);
 
@@ -552,7 +712,6 @@ function generateSyntheticTestTarget() {
   triggerLeonPipeline();
 }
 
-// --- UI BINDINGS ---
 function bindSlider(slider, valId, suffix = '') {
   const el = document.getElementById(valId);
   slider.addEventListener('input', () => { el.innerText = slider.value + suffix; });
@@ -604,8 +763,8 @@ function renderWipeComparison() {
   }
   ctx.putImageData(comp, 0, 0);
   if (splitX > 2 && splitX < w - 2) {
-    ctx.fillStyle = '#ffb300';
-    ctx.fillRect(splitX - 1, 0, 3, h);
+    ctx.fillStyle = '#6b9eff';
+    ctx.fillRect(splitX - 1, 0, 2, h);
   }
 }
 
@@ -616,8 +775,8 @@ function triggerLeonPipeline() {
     generateSyntheticTestTarget();
     return;
   }
-  telemetry.style.display = 'block';
-  telemetry.innerHTML = '⚡ EXECUTING LEON AXIOMATIC PIPELINE...';
+  outputFrame.style.display = 'block';
+  telemetry.innerHTML = 'Executing axiomatic pipeline...';
   requestAnimationFrame(() => requestAnimationFrame(executeLeonPipeline));
 }
 
@@ -642,13 +801,11 @@ function executeLeonPipeline() {
 
   const srcBytes = sourceCanvas.getContext('2d').getImageData(0, 0, sw, sh).data;
 
-  // Generate Naive Nearest-Neighbor Reference for Split Wipe
   canvas.width = dw; canvas.height = dh;
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(sourceCanvas, 0, 0, dw, dh);
   naiveImageData = ctx.getImageData(0, 0, dw, dh);
 
-  // 1. Exact Linear Photon Space YCbCr Separation
   const nSrc = sw * sh;
   const Y_lr = new Float32Array(nSrc);
   const Cb_lr = new Float32Array(nSrc);
@@ -678,33 +835,27 @@ function executeLeonPipeline() {
     }
   }
 
-  // 2. Perona-Malik Edge-Preserving Conductance
   const Y_clean = applyPeronaMalikDiffusion(Y_lr, sw, sh, denoiseKappa);
 
-  // 3. Separable Orthogonal Sinc/Spline Upscaling with Convex Hull Clamp
   let Y_hr = scale === 1 ? new Float32Array(Y_clean) : resampleChannelFloat32(Y_clean, sw, sh, dw, dh, kernelMode, hullClamp);
   const Cb_hr = scale === 1 ? new Float32Array(Cb_lr) : resampleChannelFloat32(Cb_lr, sw, sh, dw, dh, 'mitchell', 0.5);
   const Cr_hr = scale === 1 ? new Float32Array(Cr_lr) : resampleChannelFloat32(Cr_lr, sw, sh, dw, dh, 'mitchell', 0.5);
 
-  // 4. 2D Structure Tensor Sub-Pixel Bilinear Steering
   if (tensorStrength > 0) {
     Y_hr = applyStructureTensorSteering(Y_hr, dw, dh, tensorStrength);
   }
 
-  // 5. Monotone Backtracking Iterative Back-Projection (IBP)
-  let ibpReport = 'OFF';
+  let ibpReport = 'Inactive';
   if (ibpLoops > 0 && scale > 1) {
     const ibpOut = applyIterativeBackProjection(Y_hr, Y_clean, sw, sh, dw, dh, ibpLoops);
     Y_hr = ibpOut.data;
-    ibpReport = `${ibpOut.initErr.toFixed(4)}&rarr;${ibpOut.finalErr.toFixed(4)}`;
+    ibpReport = `${ibpOut.initErr.toFixed(4)} to ${ibpOut.finalErr.toFixed(4)}`;
   }
 
-  // 6. Richardson-Lucy Multiplicative Optical Deconvolution
   if (rlStrength > 0) {
     Y_hr = applyRichardsonLucy(Y_hr, dw, dh, rlStrength);
   }
 
-  // 7. Reconstruct Linear RGB -> Exact sRGB Bytes
   leonImageData = ctx.createImageData(dw, dh);
   const outBytes = leonImageData.data;
   const nDst = dw * dh;
@@ -725,13 +876,12 @@ function executeLeonPipeline() {
   const dt = (performance.now() - t0).toFixed(0);
 
   telemetry.innerHTML =
-    `LEON ENGINE: ${sw}x${sh} &rarr; ${dw}x${dh} px (${(nDst/1e6).toFixed(2)} MP) in ${dt} ms<br>` +
-    `BASIS: ${kernelMode.toUpperCase()} | TENSOR STEER: ${tensorStrength} | HULL CLAMP: ${hullClamp}<br>` +
-    `IBP L2 CONTRACTION: ${ibpReport} | R-L DECONVOLVE: ${rlStrength}`;
+    `Figure 1: Reconstructed output (${sw}x${sh} px to ${dw}x${dh} px, ${(nDst/1e6).toFixed(2)} MP, ${dt} ms). ` +
+    `Basis: ${kernelMode.toUpperCase()} | Tensor Steering: ${tensorStrength} | Hull Clamp: ${hullClamp} | ` +
+    `IBP L2 Residual: ${ibpReport} | Richardson-Lucy: ${rlStrength}.`;
 
-  wipeBar.style.display = 'flex';
-  canvasWrap.style.display = 'block';
-  controls.style.display = 'flex';
+  outputFrame.style.display = 'block';
+  controls.style.display = 'grid';
 }
 
 document.getElementById('savePngBtn').addEventListener('click', () => {
@@ -762,7 +912,6 @@ document.getElementById('saveJpgBtn').addEventListener('click', () => {
   }, 'image/jpeg', 0.99);
 });
 
-// Boot: Verify all 5 mathematical axioms and run initial synthetic demonstration
 runAxiomSelfTests();
 generateSyntheticTestTarget();
 </script>
