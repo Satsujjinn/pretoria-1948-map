@@ -4,6 +4,9 @@ An open-source collection of specialized, web-based tools for historical aerial 
 
 ## Demo Gallery
 
+### Output Result ("Morgenster" Somerset West Architectural Plan)
+![Flattened Blueprint](assets/demo_blueprint.jpg)
+
 ### Architectural Perspective De-Skew Studio
 | Interactive Corner Pins | Monochrome Ink Draft |
 | :---: | :---: |
