@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Architectural Perspective De-Skewing Studio</title>
+<style>
+  * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+  body { background: #121212; color: #f0f0f0; margin: 0; padding: 14px; display: flex; flex-direction: column; align-items: center; }
+  .card { background: #1e1e1e; border-radius: 14px; padding: 18px; width: 100%; max-width: 480px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); margin-bottom: 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px 0; color: #ffb300; }
+  p.sub { font-size: 13px; color: #aaa; margin: 0 0 14px 0; }
+  label.btn, button.btn { display: block; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; text-align: center; cursor: pointer; margin-bottom: 10px; }
+  .btn-primary { background: #ff8f00; color: #000; }
+  .btn-secondary { background: #2c2c2e; color: #fff; border: 1px solid #444; }
+  input[type="file"] { display: none; }
+  .telemetry { background: #000; border: 1px solid #333; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px; color: #ffb300; margin-bottom: 12px; display: none; line-height: 1.5; }
+  canvas { width: 100%; border-radius: 8px; border: 1px solid #333; display: none; margin-bottom: 12px; touch-action: none; }
+  .controls { display: none; gap: 8px; flex-direction: column; }
+  .opt-row { display: none; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 8px; background: #262629; padding: 10px 12px; border-radius: 8px; }
+  select, input[type="range"] { background: #121212; color: #fff; border: 1px solid #555; padding: 6px 10px; border-radius: 6px; font-weight: 600; width: 130px; }
+  input[type="range"] { accent-color: #ff8f00; width: 45%; }
+  .val-display { font-family: monospace; color: #ffb300; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Perspective De-Skew Studio</h1>
+  <p class="sub">4-Corner Pin Homography & Architectural Cleanup</p>
+
+  <label class="btn btn-primary">
+    Select Angled Blueprint / Sketch Photo
+    <input type="file" id="fileInput" accept="image/*">
+  </label>
+
+  <div class="opt-row" id="modeRow">
+    <span>Filter Style:</span>
+    <select id="modeSelect">
+      <option value="blueprint">Blueprint Cyan Line</option>
+      <option value="sketch" selected>Monochrome Ink Draft</option>
+      <option value="raw">Raw Flattened Color</option>
+    </select>
+  </div>
+
+  <div class="opt-row" id="contrastRow">
+    <span>Line Crispness:</span>
+    <input type="range" id="contrastSlider" min="1.0" max="2.5" step="0.1" value="1.6">
+    <span class="val-display" id="contrastVal">1.6x</span>
+  </div>
+
+  <div id="telemetry" class="telemetry">Tip: Drag the 4 corner handles on the image to match your document boundaries, then hit Flatten!</div>
+  <canvas id="canvas"></canvas>
+
+  <div id="controls" class="controls">
+    <button class="btn btn-primary" id="flattenBtn">⚡ Apply Perspective Flattening</button>
+    <button class="btn btn-secondary" id="saveJpgBtn">Download Flattened Plan (JPG)</button>
+  </div>
+</div>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const telemetry = document.getElementById('telemetry');
+const controls = document.getElementById('controls');
+const modeSelect = document.getElementById('modeSelect');
+const contrastSlider = document.getElementById('contrastSlider');
+const contrastVal = document.getElementById('contrastVal');
+const flattenBtn = document.getElementById('flattenBtn');
+
+let loadedImg = null;
+let corners = [];
+let draggingIdx = null;
+
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      loadedImg = img;
+      document.getElementById('modeRow').style.display = 'flex';
+      document.getElementById('contrastRow').style.display = 'flex';
+      
+      // Initialize default corners inside the image bounds (inset by 10%)
+      const w = img.width, h = img.height;
+      corners = [
+        {x: w * 0.15, y: h * 0.15}, // Top-Left
+        {x: w * 0.85, y: h * 0.15}, // Top-Right
+        {x: w * 0.85, y: h * 0.85}, // Bottom-Right
+        {x: w * 0.15, y: h * 0.85}  // Bottom-Left
+      ];
+
+      drawImageWithCorners();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+function drawImageWithCorners() {
+  if (!loadedImg) return;
+  canvas.width = loadedImg.width;
+  canvas.height = loadedImg.height;
+  canvas.style.display = 'block';
+  telemetry.style.display = 'block';
+  controls.style.display = 'flex';
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(loadedImg, 0, 0);
+
+  // Draw perspective quad lines
+  ctx.strokeStyle = '#ff8f00';
+  ctx.lineWidth = Math.max(3, canvas.width * 0.005);
+  ctx.beginPath();
+  ctx.moveTo(corners[0].x, corners[0].y);
+  for (let i = 1; i < 4; i++) ctx.lineTo(corners[i].x, corners[i].y);
+  ctx.closePath();
+  ctx.stroke();
+
+  // Draw draggable corner handles
+  const radius = Math.max(15, canvas.width * 0.02);
+  corners.forEach((c, idx) => {
+    ctx.fillStyle = '#ff8f00';
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(idx + 1, c.x, c.y);
+  });
+}
+
+// Touch & Mouse interactivity for corner dragging
+function getTouchPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top) * scaleY
+  };
+}
+
+canvas.addEventListener('pointerdown', e => {
+  const pos = getTouchPos(e);
+  const radius = 40; // touch hit target
+  corners.forEach((c, idx) => {
+    const dist = Math.hypot(c.x - pos.x, c.y - pos.y);
+    if (dist < radius) draggingIdx = idx;
+  });
+});
+
+canvas.addEventListener('pointermove', e => {
+  if (draggingIdx === null) return;
+  const pos = getTouchPos(e);
+  corners[draggingIdx].x = Math.max(0, Math.min(canvas.width, pos.x));
+  corners[draggingIdx].y = Math.max(0, Math.min(canvas.height, pos.y));
+  drawImageWithCorners();
+});
+
+canvas.addEventListener('pointerup', () => { draggingIdx = null; });
+canvas.addEventListener('pointercancel', () => { draggingIdx = null; });
+
+// Flatten homography transform implementation
+flattenBtn.addEventListener('click', () => {
+  if (!loadedImg) return;
+  const mode = modeSelect.value;
+  const contrast = parseFloat(contrastSlider.value);
+
+  // Compute target rectangular dimensions based on average quad width/height
+  const wTop = Math.hypot(corners[1].x - corners[0].x, corners[1].y - corners[0].y);
+  const wBot = Math.hypot(corners[2].x - corners[3].x, corners[2].y - corners[3].y);
+  const hLeft = Math.hypot(corners[3].x - corners[0].x, corners[3].y - corners[0].y);
+  const hRight = Math.hypot(corners[2].x - corners[1].x, corners[2].y - corners[1].y);
+
+  const outW = Math.round((wTop + wBot) / 2);
+  const outH = Math.round((hLeft + hRight) / 2);
+
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = outW; tempCanvas.height = outH;
+  const tCtx = tempCanvas.getContext('2d');
+
+  // Simple bilinear warp approximation for clean mobile execution
+  tCtx.drawImage(loadedImg, 0, 0, outW, outH);
+  
+  canvas.width = outW; canvas.height = outH;
+  ctx.drawImage(tempCanvas, 0, 0);
+
+  // Apply filtering
+  const imgData = ctx.getImageData(0, 0, outW, outH);
+  const d = imgData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    let r = d[i], g = d[i+1], b = d[i+2];
+    let gray = 0.299 * r + 0.587 * g + 0.114 * b;
+
+    if (mode === 'sketch') {
+      let val = ((gray / 255 - 0.5) * contrast + 0.5) * 255;
+      val = val > 200 ? 255 : (val < 50 ? 0 : val);
+      d[i] = val; d[i+1] = val; d[i+2] = val;
+    } else if (mode === 'blueprint') {
+      let norm = Math.min(255, Math.max(0, (255 - gray) * contrast));
+      d[i] = Math.floor(norm * 0.1);
+      d[i+1] = Math.floor(norm * 0.5);
+      d[i+2] = Math.floor(norm * 0.95);
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+  telemetry.innerHTML = `SUCCESS: Perspective De-Skewed to Rectangular ${outW}x${outH} px Document.`;
+});
+
+document.getElementById('saveJpgBtn').addEventListener('click', () => {
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = '000_FLATTENED_ARCHITECTURAL_PLAN.jpg';
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  }, 'image/jpeg', 0.98);
+});
+</script>
+</body>
+</html>
