@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Universal Photo Upscaler & Enhancer</title>
+<style>
+  * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+  body { background: #121212; color: #f0f0f0; margin: 0; padding: 14px; display: flex; flex-direction: column; align-items: center; }
+  .card { background: #1e1e1e; border-radius: 14px; padding: 18px; width: 100%; max-width: 480px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); margin-bottom: 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px 0; color: #00e676; }
+  p.sub { font-size: 13px; color: #aaa; margin: 0 0 14px 0; }
+  label.btn, button.btn { display: block; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; text-align: center; cursor: pointer; margin-bottom: 10px; }
+  .btn-primary { background: #00c853; color: #000; }
+  .btn-secondary { background: #2c2c2e; color: #fff; border: 1px solid #444; }
+  input[type="file"] { display: none; }
+  .telemetry { background: #000; border: 1px solid #333; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px; color: #00e676; margin-bottom: 12px; display: none; line-height: 1.5; }
+  canvas { width: 100%; border-radius: 8px; border: 1px solid #333; display: none; margin-bottom: 12px; }
+  .controls { display: none; gap: 8px; flex-direction: column; }
+  .opt-row { display: none; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 8px; background: #262629; padding: 10px 12px; border-radius: 8px; }
+  select, input[type="range"] { background: #121212; color: #fff; border: 1px solid #555; padding: 6px 10px; border-radius: 6px; font-weight: 600; width: 130px; }
+  input[type="range"] { accent-color: #00e676; width: 45%; }
+  .val-display { font-family: monospace; color: #00e676; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Universal Photo Upscaler</h1>
+  <p class="sub">High-Resolution Resampling & Detail Enhancement Studio</p>
+
+  <label class="btn btn-primary">
+    Select Photo to Upscale
+    <input type="file" id="fileInput" accept="image/*">
+  </label>
+
+  <div class="opt-row" id="scaleRow">
+    <span>Upscale Factor:</span>
+    <select id="scaleSelect">
+      <option value="1">1x (Original Res)</option>
+      <option value="2" selected>2x Super-Sample</option>
+      <option value="3">3x Ultra-Sample</option>
+      <option value="4">4x Maximum Archival</option>
+    </select>
+  </div>
+
+  <div class="opt-row" id="sharpRow">
+    <span>Edge Sharpening:</span>
+    <input type="range" id="sharpSlider" min="0" max="1.0" step="0.05" value="0.35">
+    <span class="val-display" id="sharpVal">0.35</span>
+  </div>
+
+  <div class="opt-row" id="brightRow">
+    <span>Brightness / Contrast:</span>
+    <input type="range" id="brightSlider" min="0.8" max="1.2" step="0.02" value="1.0">
+    <span class="val-display" id="brightVal">1.0x</span>
+  </div>
+
+  <div class="opt-row" id="autoEnhanceRow">
+    <span>Auto Balance / Levels:</span>
+    <input type="checkbox" id="autoEnhanceToggle" style="transform:scale(1.4);">
+  </div>
+
+  <div id="telemetry" class="telemetry"></div>
+  <canvas id="canvas"></canvas>
+
+  <div id="controls" class="controls">
+    <button class="btn btn-primary" id="saveJpgBtn">Download Upscaled Photo (JPG)</button>
+    <button class="btn btn-secondary" id="savePdfBtn">Save as High-Res PDF</button>
+  </div>
+</div>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const telemetry = document.getElementById('telemetry');
+const controls = document.getElementById('controls');
+const scaleSelect = document.getElementById('scaleSelect');
+const sharpSlider = document.getElementById('sharpSlider');
+const sharpVal = document.getElementById('sharpVal');
+const brightSlider = document.getElementById('brightSlider');
+const brightVal = document.getElementById('brightVal');
+const autoEnhanceToggle = document.getElementById('autoEnhanceToggle');
+
+let loadedImg = null;
+
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      loadedImg = img;
+      document.getElementById('scaleRow').style.display = 'flex';
+      document.getElementById('sharpRow').style.display = 'flex';
+      document.getElementById('brightRow').style.display = 'flex';
+      document.getElementById('autoEnhanceRow').style.display = 'flex';
+      processImage();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+scaleSelect.addEventListener('change', () => { if (loadedImg) processImage(); });
+sharpSlider.addEventListener('input', () => { sharpVal.innerText = sharpSlider.value; if (loadedImg) processImage(); });
+brightSlider.addEventListener('input', () => { brightVal.innerText = brightSlider.value + 'x'; if (loadedImg) processImage(); });
+autoEnhanceToggle.addEventListener('change', () => { if (loadedImg) processImage(); });
+
+function processImage() {
+  const scale = parseInt(scaleSelect.value, 10);
+  const sharpenAmount = parseFloat(sharpSlider.value);
+  const brightness = parseFloat(brightSlider.value);
+  const autoEnhance = autoEnhanceToggle.checked;
+
+  const w0 = loadedImg.width, h0 = loadedImg.height;
+  const w = w0 * scale, h = h0 * scale;
+
+  canvas.width = w; canvas.height = h;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(loadedImg, 0, 0, w, h);
+
+  // Optional Auto-Levels adjustment
+  if (autoEnhance) {
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const d = imgData.data;
+    let minV = 255, maxV = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      const g = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+      if (g < minV) minV = g;
+      if (g > maxV) maxV = g;
+    }
+    const range = (maxV - minV) || 1;
+    for (let i = 0; i < d.length; i += 4) {
+      for (let c = 0; c < 3; c++) {
+        let val = ((d[i+c] - minV) / range) * 255;
+        d[i+c] = Math.min(255, Math.max(0, val));
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  // Brightness scaling
+  if (brightness !== 1.0) {
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const d = imgData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      d[i] = Math.min(255, d[i] * brightness);
+      d[i+1] = Math.min(255, d[i+1] * brightness);
+      d[i+2] = Math.min(255, d[i+2] * brightness);
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  // Unsharp Mask Edge Recovery Filter
+  if (sharpenAmount > 0) {
+    const srcData = ctx.getImageData(0, 0, w, h);
+    const dstData = ctx.createImageData(w, h);
+    const src = srcData.data, dst = dstData.data;
+    for (let y = 1; y < h - 1; y++) {
+      for (let x = 1; x < w - 1; x++) {
+        const idx = (y * w + x) * 4;
+        for (let c = 0; c < 3; c++) {
+          const center = src[idx + c];
+          const neighbors = (
+            src[((y - 1) * w + x) * 4 + c] +
+            src[((y + 1) * w + x) * 4 + c] +
+            src[(y * w + (x - 1)) * 4 + c] +
+            src[(y * w + (x + 1)) * 4 + c]
+          ) * 0.25;
+          const val = center + (center - neighbors) * (sharpenAmount * 4);
+          dst[idx + c] = val < 0 ? 0 : (val > 255 ? 255 : val);
+        }
+        dst[idx + 3] = 255;
+      }
+    }
+    ctx.putImageData(dstData, 0, 0);
+  }
+
+  telemetry.style.display = 'block';
+  telemetry.innerHTML = `INPUT: ${w0}x${h0} px &rarr; OUTPUT: ${w}x${h} px (${scale*scale}x Upscaled)<br>SHARPEN: ${sharpenAmount} | BRIGHTNESS: ${brightness}x<br>MODE: Universal Bicubic Super-Sample + Unsharp`;
+  canvas.style.display = 'block';
+  controls.style.display = 'flex';
+}
+
+document.getElementById('saveJpgBtn').addEventListener('click', () => {
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = '000_UNIVERSAL_UPSCALED_PHOTO.jpg';
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  }, 'image/jpeg', 0.98);
+});
+
+document.getElementById('savePdfBtn').addEventListener('click', () => {
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.98);
+  const win = window.open('', '_blank');
+  win.document.write(`<html><head><title>Upscaled Photo PDF</title><style>@page { size: auto; margin: 0; } body { margin: 0; display:flex; justify-content:center; align-items:center; height:100vh; background:#000; } img { max-width: 100%; max-height: 100%; object-fit: contain; }</style></head><body><img src="${dataUrl}" onload="window.print();"></body></html>`);
+  win.document.close();
+});
+</script>
+</body>
+</html>
