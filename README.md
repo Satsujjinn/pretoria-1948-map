@@ -1,33 +1,48 @@
-# Spatial & Architectural Processing Suite
+<div align="center">
 
-**Production Web Suite:** [https://satsujjinn.github.io/spatial-architectural-suite/](https://satsujjinn.github.io/spatial-architectural-suite/)
+# SPATIAL & ARCHITECTURAL PROCESSING SUITE
 
-A client-side, zero-dependency HTML5 Canvas toolkit engineered for historical aerial photogrammetry, projective homography rectification, bicubic super-sampling, and architectural scale model fabrication.
+**CLIENT-SIDE COMPUTATIONAL GEOMETRY & PHOTOGRAMMETRY**
 
-## Technical Demonstrations
+[**[ LAUNCH LIVE SYSTEM ]**](https://satsujjinn.github.io/spatial-architectural-suite/)
 
-### Projective Rectification Output ("Morgenster" Somerset West Elevation)
-![Flattened Blueprint](assets/demo_blueprint.jpg)
+---
 
-### Perspective De-Skew Interface
-| 4-Point Homography Control | Monochrome Thresholding |
+### I. PROJECTIVE RECTIFICATION PLATE ("MORGENSTER" ELEVATION)
+
+<img src="assets/demo_blueprint.jpg" width="100%" alt="Rectified Blueprint">
+
+---
+
+### II. TELEMETRY & CONTROL MATRICES
+
+| 01. 4-POINT HOMOGRAPHY | 02. MONOCHROME THRESHOLD |
 | :---: | :---: |
-| ![Corner Pins](assets/demo_corners.jpg) | ![Monochrome Filter](assets/demo_monochrome.jpg) |
+| <img src="assets/demo_corners.jpg" width="100%" alt="Corner Pins"> | <img src="assets/demo_monochrome.jpg" width="100%" alt="Monochrome Output"> |
+| **03. 16X BICUBIC SUPER-SAMPLING** | **04. L1 ZERO-DIFFERENCE REGISTRATION** |
+| <img src="assets/demo_upscaler.jpg" width="100%" alt="Universal Upscaler"> | <img src="assets/demo_stitcher.jpg" width="100%" alt="Mosaic Stitcher"> |
 
-## Core Modules
+---
 
-| Module | File | Mathematical Implementation |
-| :--- | :--- | :--- |
-| **Perspective De-Skew** | `000_Architectural_Perspective_App.html` | 8-DOF projective homography solved via `Float64Array` Gaussian elimination with partial pivoting and bilinear interpolation. |
-| **Scale Model Calculator** | `000_Architectural_Scale_Model_App.html` | Bidirectional metric-to-scale conversion, material thickness butt-joint deduction, secant roof pitch projection, and 2-point photogrammetric calibration. |
-| **Ortho-Rectifier & Upscaler** | `000_Aerial_Super_Upscaler_App.html` | Optical scale derivation ($H = f \cdot S$) from 228.6 mm survey negatives and inclinometer centroid homography transformation. |
-| **Universal Resampler** | `000_Universal_Photo_Upscaler_App.html` | Single-pass dynamic range normalization, gain scaling, and 5-point Laplacian unsharp masking with boundary preservation. |
-| **Mosaic Stitcher V3** | `000_Aerial_Mosaic_Stitcher_App_V3.html` | Zero-Mean Normalized Cross-Correlation (ZNCC) and L1 minimum-difference block matching with radial alpha feathering. |
+### III. ARCHITECTURAL & MATHEMATICAL SPECIFICATIONS
 
-## System Architecture & Constraints
-* **Execution Environment:** Client-side ECMAScript / HTML5 2D Context (`willReadFrequently: true`).
-* **Memory Management:** Enforces a strict $16,777,216$ pixel ($4096 \times 4096$) allocation ceiling to maintain stability on mobile WebKit/Blink engines.
-* **Data Privacy:** Zero network transmission; all raster buffers are processed locally in volatile memory.
+| MODULE | SOURCE FILE | MATHEMATICAL FORMULATION |
+| :---: | :---: | :---: |
+| **PERSPECTIVE DE-SKEW** | `000_Architectural_Perspective_App.html` | 8-DOF Projective Homography via `Float64Array` Gaussian Elimination & Bilinear Interpolation |
+| **SCALE MODEL STUDIO** | `000_Architectural_Scale_Model_App.html` | Metric-to-Scale Conversion, Kerf/Butt-Joint Deduction, Secant Slope & 2-Pin Calibration |
+| **AERIAL ORTHO-RECTIFIER** | `000_Aerial_Super_Upscaler_App.html` | Optical Altitude Scaling ($H = f \cdot S$) & Inclinometer Centroid Homography |
+| **UNIVERSAL RESAMPLER** | `000_Universal_Photo_Upscaler_App.html` | Single-Pass Dynamic Range Normalization & 5-Point Laplacian Unsharp Masking |
+| **MOSAIC STITCHER V3** | `000_Aerial_Mosaic_Stitcher_App_V3.html` | Zero-Mean Normalized Cross-Correlation (ZNCC) & L1 Pixel Difference Minimization |
 
-## License
-MIT License. Copyright (c) 2026 Leon Christoffel Mynhardt Jordaan. See `LICENSE` for full terms.
+---
+
+### IV. SYSTEM PARAMETERS
+
+| PARAMETER | SPECIFICATION |
+| :---: | :---: |
+| **EXECUTION ENGINE** | ECMAScript / HTML5 2D Canvas (`willReadFrequently: true`) |
+| **MEMORY CEILING** | $16,777,216\text{ px}$ ($4096 \times 4096$) Hardware Allocation Guard |
+| **NETWORK TELEMETRY** | Zero External Transmission / 100% Volatile Local Memory |
+| **LICENSE** | MIT License — Copyright (c) 2026 Leon Christoffel Mynhardt Jordaan |
+
+</div>
