@@ -8,16 +8,16 @@
   * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
   body { background: #0d0d0d; color: #e0e0e0; margin: 0; padding: 24px 16px; display: flex; flex-direction: column; align-items: center; }
   .container { width: 100%; max-width: 640px; }
-  header { border-bottom: 1px solid #2a2a2a; padding-bottom: 16px; margin-bottom: 20px; }
-  h1 { font-size: 20px; font-weight: 700; color: #ffffff; margin: 0 0 6px 0; letter-spacing: -0.3px; }
-  p.sub { font-size: 13px; color: #888888; margin: 0; font-family: monospace; }
-  .hero-img { width: 100%; border-radius: 6px; border: 1px solid #2a2a2a; margin-bottom: 20px; display: block; }
-  .app-card { background: #161616; border: 1px solid #2a2a2a; border-radius: 6px; padding: 14px 16px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit; transition: border-color 0.15s, background 0.15s; }
+  header { border-bottom: 1px solid #2a2a2a; padding-bottom: 16px; margin-bottom: 20px; text-align: center; }
+  h1 { font-size: 20px; font-weight: 700; color: #ffffff; margin: 0 0 6px 0; letter-spacing: 0.5px; text-transform: uppercase; }
+  p.sub { font-size: 12px; color: #888888; margin: 0; font-family: monospace; text-transform: uppercase; }
+  .hero-img { width: 100%; border-radius: 4px; border: 1px solid #2a2a2a; margin-bottom: 20px; display: block; }
+  .app-card { background: #161616; border: 1px solid #2a2a2a; border-radius: 4px; padding: 14px 16px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit; transition: border-color 0.15s, background 0.15s; }
   .app-card:hover { border-color: #666666; background: #1c1c1c; }
   .app-header { display: flex; justify-content: space-between; align-items: center; }
   .app-title { font-size: 15px; font-weight: 600; color: #ffffff; }
-  .app-desc { font-size: 12.5px; color: #999999; line-height: 1.45; }
-  .tag { font-size: 10px; font-family: monospace; text-transform: uppercase; background: #222222; border: 1px solid #333333; padding: 2px 6px; border-radius: 4px; color: #bbbbbb; letter-spacing: 0.5px; }
+  .app-desc { font-size: 13px; color: #999999; line-height: 1.45; }
+  .tag { font-size: 10px; font-family: monospace; text-transform: uppercase; background: #222222; border: 1px solid #333333; padding: 2px 6px; border-radius: 3px; color: #bbbbbb; letter-spacing: 0.5px; }
   footer { margin-top: 24px; padding-top: 14px; border-top: 1px solid #2a2a2a; font-size: 11px; color: #666666; font-family: monospace; display: flex; justify-content: space-between; }
   footer a { color: #888888; text-decoration: none; }
 </style>
@@ -26,54 +26,54 @@
 <div class="container">
   <header>
     <h1>Spatial & Architectural Processing Suite</h1>
-    <p class="sub">v1.0.0 | Client-Side Photogrammetry & Computational Geometry</p>
+    <p class="sub">Web Tools for Maps, Photos, and Drawings</p>
   </header>
 
-  <img src="assets/demo_blueprint.jpg" alt="Rectified Architectural Elevation" class="hero-img">
+  <img src="assets/demo_blueprint.jpg" alt="Flattened Blueprint" class="hero-img">
 
   <a href="000_Architectural_Perspective_App.html" class="app-card">
     <div class="app-header">
       <span class="app-title">Perspective De-Skew Studio</span>
-      <span class="tag">Projective Homography</span>
+      <span class="tag">Drawings</span>
     </div>
-    <div class="app-desc">Float64 8-DOF projective transformation with bilinear interpolation for rectifying oblique architectural documents and drawings.</div>
+    <div class="app-desc">Drag 4 corner pins to flatten angled photos of blueprints and sketches into straight, rectangular documents.</div>
   </a>
 
   <a href="000_Architectural_Scale_Model_App.html" class="app-card">
     <div class="app-header">
       <span class="app-title">Scale Model & Cut-List Studio</span>
-      <span class="tag">Fabrication Geometry</span>
+      <span class="tag">Models</span>
     </div>
-    <div class="app-desc">Metric-to-scale dimensional solver, board thickness butt-joint deduction, secant roof slope calculator, and 2-point photogrammetric ruler.</div>
+    <div class="app-desc">Convert real-world measurements into scale model cut sizes, subtract board thickness for clean corners, and measure model photos.</div>
   </a>
 
   <a href="000_Aerial_Super_Upscaler_App.html" class="app-card">
     <div class="app-header">
-      <span class="app-title">Aerial Ortho-Rectifier & Upscaler</span>
-      <span class="tag">Photogrammetry</span>
+      <span class="app-title">Aerial Map Rectifier & Upscaler</span>
+      <span class="tag">Aerial Maps</span>
     </div>
-    <div class="app-desc">Automated flight altitude and focal length parameter estimation with inclinometer centroid homography correction for archival survey plates.</div>
+    <div class="app-desc">Automatically calculate flight height and straighten tilted 1948 aerial survey photos.</div>
   </a>
 
   <a href="000_Universal_Photo_Upscaler_App.html" class="app-card">
     <div class="app-header">
-      <span class="app-title">Universal Raster Resampler</span>
-      <span class="tag">Signal Processing</span>
+      <span class="app-title">Universal Photo Upscaler</span>
+      <span class="tag">Photos</span>
     </div>
-    <div class="app-desc">Single-pass bicubic super-sampling, histogram auto-leveling, and 5-point Laplacian unsharp masking with boundary preservation.</div>
+    <div class="app-desc">Enlarge photos up to 4x, sharpen blurry edges, and auto-balance brightness and contrast.</div>
   </a>
 
   <a href="000_Aerial_Mosaic_Stitcher_App_V3.html" class="app-card">
     <div class="app-header">
-      <span class="app-title">Aerial Strip Mosaic Stitcher V3</span>
-      <span class="tag">Cartographic Registration</span>
+      <span class="app-title">Aerial Map Stitcher V3</span>
+      <span class="tag">Stitching</span>
     </div>
-    <div class="app-desc">Zero-Mean Normalized Cross-Correlation (ZNCC) and L1 pixel difference registration with plate exposure equalization.</div>
+    <div class="app-desc">Align and blend two overlapping aerial map strips while keeping side instrument dials intact.</div>
   </a>
 
   <footer>
     <span>MIT License | Leon Jordaan</span>
-    <a href="https://github.com/Satsujjinn/spatial-architectural-suite">Source Repository</a>
+    <a href="https://github.com/Satsujjinn/spatial-architectural-suite">GitHub</a>
   </footer>
 </div>
 </body>

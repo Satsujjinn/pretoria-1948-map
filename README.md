@@ -2,47 +2,47 @@
 
 # SPATIAL & ARCHITECTURAL PROCESSING SUITE
 
-**CLIENT-SIDE COMPUTATIONAL GEOMETRY & PHOTOGRAMMETRY**
+**WEB TOOLS FOR MAPS, PHOTOS, AND ARCHITECTURAL DRAWINGS**
 
-[**[ LAUNCH LIVE SYSTEM ]**](https://satsujjinn.github.io/spatial-architectural-suite/)
-
----
-
-### I. PROJECTIVE RECTIFICATION PLATE ("MORGENSTER" ELEVATION)
-
-<img src="assets/demo_blueprint.jpg" width="100%" alt="Rectified Blueprint">
+[**[ OPEN WEB APPS ]**](https://satsujjinn.github.io/spatial-architectural-suite/)
 
 ---
 
-### II. TELEMETRY & CONTROL MATRICES
+### I. FLATTENED BLUEPRINT OUTPUT
 
-| 01. 4-POINT HOMOGRAPHY | 02. MONOCHROME THRESHOLD |
+<img src="assets/demo_blueprint.jpg" width="100%" alt="Flattened Blueprint">
+
+---
+
+### II. APP PREVIEWS
+
+| 01. 4-CORNER PIN ALIGNMENT | 02. BLACK & WHITE INK MODE |
 | :---: | :---: |
 | <img src="assets/demo_corners.jpg" width="100%" alt="Corner Pins"> | <img src="assets/demo_monochrome.jpg" width="100%" alt="Monochrome Output"> |
-| **03. 16X BICUBIC SUPER-SAMPLING** | **04. L1 ZERO-DIFFERENCE REGISTRATION** |
+| **03. 4X PHOTO UPSCALER** | **04. AERIAL MAP STITCHER** |
 | <img src="assets/demo_upscaler.jpg" width="100%" alt="Universal Upscaler"> | <img src="assets/demo_stitcher.jpg" width="100%" alt="Mosaic Stitcher"> |
 
 ---
 
-### III. ARCHITECTURAL & MATHEMATICAL SPECIFICATIONS
+### III. INCLUDED APPS
 
-| MODULE | SOURCE FILE | MATHEMATICAL FORMULATION |
+| APP NAME | FILE | WHAT IT DOES |
 | :---: | :---: | :---: |
-| **PERSPECTIVE DE-SKEW** | `000_Architectural_Perspective_App.html` | 8-DOF Projective Homography via `Float64Array` Gaussian Elimination & Bilinear Interpolation |
-| **SCALE MODEL STUDIO** | `000_Architectural_Scale_Model_App.html` | Metric-to-Scale Conversion, Kerf/Butt-Joint Deduction, Secant Slope & 2-Pin Calibration |
-| **AERIAL ORTHO-RECTIFIER** | `000_Aerial_Super_Upscaler_App.html` | Optical Altitude Scaling ($H = f \cdot S$) & Inclinometer Centroid Homography |
-| **UNIVERSAL RESAMPLER** | `000_Universal_Photo_Upscaler_App.html` | Single-Pass Dynamic Range Normalization & 5-Point Laplacian Unsharp Masking |
-| **MOSAIC STITCHER V3** | `000_Aerial_Mosaic_Stitcher_App_V3.html` | Zero-Mean Normalized Cross-Correlation (ZNCC) & L1 Pixel Difference Minimization |
+| **PERSPECTIVE DE-SKEW** | `000_Architectural_Perspective_App.html` | Drag 4 corner pins to flatten angled photos of blueprints and drawings. |
+| **SCALE MODEL STUDIO** | `000_Architectural_Scale_Model_App.html` | Converts real measurements into scale model cut sizes (1:20 to 1:500) and subtracts board thickness. |
+| **AERIAL MAP RECTIFIER** | `000_Aerial_Super_Upscaler_App.html` | Straightens tilted 1948 aerial photos and calculates flight height. |
+| **PHOTO UPSCALER** | `000_Universal_Photo_Upscaler_App.html` | Enlarges photos up to 4x, sharpens edges, and balances brightness. |
+| **MAP STITCHER V3** | `000_Aerial_Mosaic_Stitcher_App_V3.html` | Aligns and blends overlapping aerial map strips while keeping side dials visible. |
 
 ---
 
-### IV. SYSTEM PARAMETERS
+### IV. SYSTEM INFO
 
-| PARAMETER | SPECIFICATION |
+| FEATURE | DETAILS |
 | :---: | :---: |
-| **EXECUTION ENGINE** | ECMAScript / HTML5 2D Canvas (`willReadFrequently: true`) |
-| **MEMORY CEILING** | $16,777,216\text{ px}$ ($4096 \times 4096$) Hardware Allocation Guard |
-| **NETWORK TELEMETRY** | Zero External Transmission / 100% Volatile Local Memory |
+| **WORKS ON** | Phone, Tablet, and Desktop Browsers (Android, iOS, Windows, Mac) |
+| **MEMORY LIMIT** | Capped at 4096 x 4096 pixels so mobile browsers never crash |
+| **PRIVACY** | Runs 100% on your device — no photos are uploaded to any server |
 | **LICENSE** | MIT License — Copyright (c) 2026 Leon Christoffel Mynhardt Jordaan |
 
 </div>
