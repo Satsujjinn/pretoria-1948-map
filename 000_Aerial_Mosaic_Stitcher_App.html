@@ -47,7 +47,7 @@
   </button>
 
   <button class="btn btn-accent" id="autoBlackBtn" style="display:none;">
-    ⚡ Auto-Match Black (Zero Diff Search)
+    Auto-Match Black (Zero Diff Search)
   </button>
 
   <div class="opt-row" id="trimRow">
@@ -364,7 +364,7 @@ function renderMosaic() {
   ctx.restore();
 
   telemetry.style.display = 'block';
-  telemetry.innerHTML = `MOSAIC SIZE: ${outW}x${outH} px | CROP: ${trimSlider.value}%<br>OFFSET: dX=${dx}px, dY=${dy}px (Match: ${matchScore.toFixed(1)}%)<br>TIP: Click "⚡ Auto-Match Black" to snap to zero-diff alignment.`;
+  telemetry.innerHTML = `MOSAIC SIZE: ${outW}x${outH} px | CROP: ${trimSlider.value}%<br>OFFSET: dX=${dx}px, dY=${dy}px (Match: ${matchScore.toFixed(1)}%)<br>TIP: Click "Auto-Match Black" to snap to zero-diff alignment.`;
   canvas.style.display = 'block';
 }
 
