@@ -1,5 +1,7 @@
 # Spatial & Architectural Processing Suite
 
+**Live Web Suite:** [https://satsujjinn.github.io/pretoria-1948-map/](https://satsujjinn.github.io/pretoria-1948-map/)
+
 An open-source collection of specialized, web-based tools for historical aerial photogrammetry, image super-sampling, and architectural document perspective correction.
 
 ## Demo Gallery
