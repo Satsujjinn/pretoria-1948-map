@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>The Leon App - Archival Photochemical & Optical Inverse Engine</title>
+<title>The Leon App - Autonomous Inverse Super-Resolution</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -21,7 +21,7 @@
     background-color: #181c22;
     border: 1px solid #3a3f47;
     width: 100%;
-    max-width: 760px;
+    max-width: 780px;
     padding: 18px 22px 26px 22px;
   }
   h1.firstHeading {
@@ -177,13 +177,13 @@
 
 <div class="mw-page-container">
   <h1 class="firstHeading">The Leon App</h1>
-  <div class="siteSub">Archival Photochemical, Radiometric &amp; Inverse Super-Resolution Engine</div>
+  <div class="siteSub">Autonomous Inverse Photochemical, Radiometric &amp; Super-Resolution Engine</div>
 
   <div class="hatnote">
-    <strong>Forward-Model Inversion:</strong> Reconstructs continuous ground radiance $I_{\text{true}}(x,y)$ from historical silver-halide emulsions and optical scans by inverting Hurter-Driffield characteristic density ($D = \gamma \log_{10} E + D_0$), $\cos^4(\theta)$ wide-angle lens vignetting, Poisson silver-grain shot noise (Anscombe transform), and optical point-spread degradation (TV-Regularized Richardson-Lucy + Monotone Backtracking IBP).
+    <strong>Autonomous Closed-Form Parameter Estimation:</strong> Prior to spatial reconstruction, the engine evaluates Immerkaer's zero-mean double-Laplacian noise operator ($M_{\text{Imm}}$), radial least-squares illumination regression ($\cos^4\theta$), 1024-bin Hurter-Driffield quantile skewness, Tenengrad spectral roll-off ($\mathbb{E}[\vert{}\nabla^2 Y\vert{}^2]/\mathbb{E}[\vert{}\nabla Y\vert{}^2]$), and 2D Structure Tensor eigenvalue coherence ($\mathcal{C}$) to solve all physical restoration parameters automatically.
   </div>
 
-  <h2 class="mw-headline">1. Axiomatic Verification Matrix (Float64 Self-Test)</h2>
+  <h2 class="mw-headline">1. Axiomatic Verification Matrix (9-Point Float64 Self-Test)</h2>
   <table class="wikitable">
     <thead>
       <tr>
@@ -198,7 +198,7 @@
     </tbody>
   </table>
 
-  <h2 class="mw-headline">2. Archival Plate / Image Input</h2>
+  <h2 class="mw-headline">2. Archival Plate Input &amp; Autonomous Parameter Solver</h2>
   <div class="btn-group">
     <label class="mw-btn mw-btn-progressive">
       Load Archival Plate / Photo
@@ -209,14 +209,40 @@
     </button>
   </div>
 
-  <h2 class="mw-headline">3. Photochemical &amp; Radiometric Calibration</h2>
+  <div class="opt-row" style="background:#20242c;border:1px solid #3a3f47;padding:8px 10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+    <span><strong>Autonomous Parameter Solver Mode:</strong></span>
+    <label style="cursor:pointer;font-size:12.5px;">
+      <input type="checkbox" id="autoModeToggle" checked> Auto-Solve Optimal Parameters on Image Load
+    </label>
+  </div>
+
+  <button class="mw-btn mw-btn-progressive" id="autoDetectBtn" style="margin-bottom:12px;">
+    Auto-Detect Optimal Mathematical Parameters &amp; Reconstruct
+  </button>
+
+  <h2 class="mw-headline">3. Autonomous Diagnostic Telemetry Matrix</h2>
+  <table class="wikitable">
+    <thead>
+      <tr>
+        <th>Diagnostic Estimator</th>
+        <th>Mathematical Formulation</th>
+        <th>Measured Statistic</th>
+        <th>Derived Parameter</th>
+      </tr>
+    </thead>
+    <tbody id="diagTableBody" class="mono">
+      <tr><td colspan="4">Awaiting source manifold analysis...</td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="mw-headline">4. Photochemical &amp; Radiometric Calibration</h2>
   <table class="wikitable">
     <tbody>
       <tr>
         <th style="width:44%;">Hurter-Driffield Emulsion Gamma ($\gamma$)</th>
         <td>
           <div class="slider-wrap">
-            <input type="range" id="hdGammaSlider" min="0.60" max="1.60" step="0.05" value="1.15">
+            <input type="range" id="hdGammaSlider" min="0.60" max="1.60" step="0.02" value="1.15">
             <span class="val-cell" id="hdGammaVal">1.15</span>
           </div>
         </td>
@@ -225,7 +251,7 @@
         <th>$\cos^4(\theta)$ Lens Vignetting Compensation</th>
         <td>
           <div class="slider-wrap">
-            <input type="range" id="vigSlider" min="0.00" max="1.00" step="0.05" value="0.35">
+            <input type="range" id="vigSlider" min="0.00" max="1.00" step="0.02" value="0.35">
             <span class="val-cell" id="vigVal">0.35</span>
           </div>
         </td>
@@ -234,7 +260,7 @@
         <th>Anscombe Silver-Grain Gate ($\sigma_{\text{VST}}$)</th>
         <td>
           <div class="slider-wrap">
-            <input type="range" id="anscombeSlider" min="0" max="30" step="2" value="10">
+            <input type="range" id="anscombeSlider" min="0" max="30" step="1" value="10">
             <span class="val-cell" id="anscombeVal">10</span>
           </div>
         </td>
@@ -248,7 +274,7 @@
     </tbody>
   </table>
 
-  <h2 class="mw-headline">4. Spatial Super-Resolution &amp; Optical Deconvolution</h2>
+  <h2 class="mw-headline">5. Spatial Super-Resolution &amp; Optical Deconvolution</h2>
   <table class="wikitable">
     <tbody>
       <tr>
@@ -276,7 +302,7 @@
         <th>2D Structure Tensor Anisotropy</th>
         <td>
           <div class="slider-wrap">
-            <input type="range" id="tensorSlider" min="0" max="1.0" step="0.05" value="0.80">
+            <input type="range" id="tensorSlider" min="0" max="1.0" step="0.02" value="0.80">
             <span class="val-cell" id="tensorVal">0.80</span>
           </div>
         </td>
@@ -285,7 +311,7 @@
         <th>Gibbs Convex-Hull Monotonicity Clamp</th>
         <td>
           <div class="slider-wrap">
-            <input type="range" id="ringSlider" min="0" max="1.0" step="0.05" value="0.90">
+            <input type="range" id="ringSlider" min="0" max="1.0" step="0.02" value="0.90">
             <span class="val-cell" id="ringVal">0.90</span>
           </div>
         </td>
@@ -303,7 +329,7 @@
         <th>TV-Regularized Richardson-Lucy PSF</th>
         <td>
           <div class="slider-wrap">
-            <input type="range" id="rlSlider" min="0" max="1.0" step="0.05" value="0.50">
+            <input type="range" id="rlSlider" min="0" max="1.0" step="0.02" value="0.50">
             <span class="val-cell" id="rlVal">0.50</span>
           </div>
         </td>
@@ -312,10 +338,10 @@
   </table>
 
   <button class="mw-btn mw-btn-progressive" id="runBtn">
-    Execute Full Physical Inversion Pipeline
+    Execute Manual / Current Parameter Pipeline
   </button>
 
-  <h2 class="mw-headline">5. Reconstructed Manifold &amp; Telemetry</h2>
+  <h2 class="mw-headline">6. Reconstructed Manifold &amp; Telemetry</h2>
   <div class="thumb" id="outputFrame">
     <div class="wipe-control">
       <span>Partition Wipe (Left: Inverted Signal | Right: Raw Uncorrected Scan):</span>
@@ -331,7 +357,7 @@
   </div>
 
   <div class="footer-meta">
-    The Leon App &bull; Historical Photogrammetry, Sensitometry &amp; Inverse Problems Laboratory &bull; MIT License
+    The Leon App &bull; Historical Photogrammetry, Sensitometry &amp; Autonomous Inverse Problems Laboratory &bull; MIT License
   </div>
 </div>
 
@@ -339,11 +365,14 @@
 const MAX_PIXELS = 16777216;
 const fileInput = document.getElementById('fileInput');
 const synthBtn = document.getElementById('synthBtn');
+const autoModeToggle = document.getElementById('autoModeToggle');
+const autoDetectBtn = document.getElementById('autoDetectBtn');
 const runBtn = document.getElementById('runBtn');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 const telemetry = document.getElementById('telemetry');
 const axiomTableBody = document.getElementById('axiomTableBody');
+const diagTableBody = document.getElementById('diagTableBody');
 const outputFrame = document.getElementById('outputFrame');
 const wipeSlider = document.getElementById('wipeSlider');
 const controls = document.getElementById('controls');
@@ -377,38 +406,23 @@ function linearToSrgbByte(lin) {
   return Math.min(255, Math.max(0, Math.round(c * 255.0)));
 }
 
-// --- AXIOM VI: HURTER-DRIFFIELD SENSITOMETRIC CHARACTERISTIC TRANSFER ---
-// Forward H-D film response: maps linear exposure E in [0,1] -> transmittance T in [0,1]
-function forwardHurterDriffield(E, gamma) {
-  const eps = 1e-4;
-  const logE = Math.log10(Math.max(eps, Math.min(1.0, E)));
-  const logE_min = Math.log10(eps);
-  const normLogE = (logE - logE_min) / (0.0 - logE_min); // in [0, 1]
-  // Sigmoidal Hurter-Driffield density response (toe + linear + shoulder)
-  const centered = (normLogE - 0.5) * gamma * 6.0;
-  return 1.0 / (1.0 + Math.exp(-centered));
-}
-
-// Exact analytical inverse of the Hurter-Driffield film curve
+// --- AXIOM VI: HURTER-DRIFFIELD SENSITOMETRIC TRANSFER ---
 function inverseHurterDriffield(T, gamma) {
   if (Math.abs(gamma - 1.0) < 1e-5) return T;
   const clampedT = Math.max(1e-5, Math.min(1.0 - 1e-5, T));
   const logit = Math.log(clampedT / (1.0 - clampedT));
   const normLogE = 0.5 + logit / (gamma * 6.0);
-  // Blend linear transmittance with H-D sensitometric linearized exposure
   const hdVal = Math.max(0.0, Math.min(1.0, normLogE));
   return Math.max(0.0, Math.min(1.0, Math.pow(T, 1.0 / gamma) * 0.7 + hdVal * 0.3));
 }
 
-// --- AXIOM VIII: ANSCOMBE VARIANCE-STABILIZING TRANSFORM (POISSON SHOT NOISE) ---
+// --- AXIOM VIII: ANSCOMBE VARIANCE-STABILIZING TRANSFORM ---
 function anscombeForward(x) {
-  // Maps x in [0, 1] (scaled to 255 photon counts) to homoscedastic Gaussian variance
   const z = Math.max(0.0, x * 255.0);
   return 2.0 * Math.sqrt(z + 0.375);
 }
 
 function anscombeInverse(y) {
-  // Exact algebraic inverse of Anscombe transform mapped back to [0, 1]
   const yClamped = Math.max(2.0 * Math.sqrt(0.375), y);
   const z = (yClamped * yClamped) * 0.25 - 0.375;
   return Math.max(0.0, Math.min(1.0, z / 255.0));
@@ -434,7 +448,202 @@ function kernelEval(x, mode) {
   }
 }
 
-// --- 8-AXIOM FLOAT64 SELF-VERIFICATION SUITE ---
+// --- AXIOM IX: IMMERKAER ZERO-MEAN DOUBLE-LAPLACIAN NOISE ESTIMATOR ---
+function computeImmerkaerSigma(field, w, h) {
+  if (w < 4 || h < 4) return 0.0;
+  let sumAbs = 0.0;
+  let count = 0;
+  for (let y = 1; y < h - 1; y++) {
+    const rU = (y - 1) * w, rM = y * w, rD = (y + 1) * w;
+    for (let x = 1; x < w - 1; x++) {
+      // [1, -2, 1; -2, 4, -2; 1, -2, 1] annihilates constant, linear, and bilinear ramps
+      const conv =
+        field[rU + x - 1] - 2.0 * field[rU + x] + field[rU + x + 1] -
+        2.0 * field[rM + x - 1] + 4.0 * field[rM + x] - 2.0 * field[rM + x + 1] +
+        field[rD + x - 1] - 2.0 * field[rD + x] + field[rD + x + 1];
+      sumAbs += Math.abs(conv);
+      count++;
+    }
+  }
+  return count > 0 ? Math.sqrt(Math.PI * 0.5) * (sumAbs / (6.0 * count)) : 0.0;
+}
+
+// --- AUTONOMOUS CLOSED-FORM PARAMETER SOLVER ---
+function autoDetectOptimalParameters(srcCanvas) {
+  const sw = srcCanvas.width, sh = srcCanvas.height;
+  const rawBytes = srcCanvas.getContext('2d').getImageData(0, 0, sw, sh).data;
+  const n = sw * sh;
+
+  const Y = new Float32Array(n);
+  const Z_vst = new Float32Array(n);
+  const hist = new Uint32Array(1024);
+
+  for (let i = 0; i < n; i++) {
+    const idx = i * 4;
+    const rL = srgbToLinearLUT[rawBytes[idx]];
+    const gL = srgbToLinearLUT[rawBytes[idx + 1]];
+    const bL = srgbToLinearLUT[rawBytes[idx + 2]];
+    const y = 0.2126 * rL + 0.7152 * gL + 0.0722 * bL;
+    Y[i] = y;
+    Z_vst[i] = anscombeForward(y);
+    hist[Math.min(1023, Math.floor(y * 1023))]++;
+  }
+
+  // 1. Quantile Distribution & Hurter-Driffield Gamma Estimation
+  let cum = 0, p01 = 0.0, p50 = 0.5, p99 = 1.0;
+  for (let b = 0; b < 1024; b++) { cum += hist[b]; if (cum >= n * 0.01) { p01 = b / 1023.0; break; } }
+  cum = 0;
+  for (let b = 0; b < 1024; b++) { cum += hist[b]; if (cum >= n * 0.50) { p50 = b / 1023.0; break; } }
+  cum = 0;
+  for (let b = 0; b < 1024; b++) { cum += hist[b]; if (cum >= n * 0.99) { p99 = b / 1023.0; break; } }
+
+  const dynSpan = Math.max(0.05, p99 - p01);
+  const needCDF = (p01 > 0.025) || (p99 < 0.94);
+  const normMedian = Math.max(0.08, Math.min(0.92, (p50 - p01) / dynSpan));
+  // Solve (normMedian)^(1/gamma) = 0.50 => gamma = ln(normMedian) / ln(0.50)
+  let estGamma = Math.log(normMedian) / Math.log(0.50);
+  // Invert direction so dark compressed emulsions receive positive H-D expansion
+  estGamma = 1.0 + (1.0 - estGamma) * 0.45;
+  estGamma = Math.max(0.60, Math.min(1.60, Math.round(estGamma * 50) / 50));
+
+  // 2. Radial Least-Squares Regression for Cos^4(theta) Vignetting
+  const cx = sw * 0.5, cy = sh * 0.5;
+  const maxR2 = cx * cx + cy * cy;
+  let sumU = 0.0, sumY = 0.0, sumUU = 0.0, sumUY = 0.0, validV = 0;
+
+  for (let y = 0; y < sh; y += 2) {
+    const dy = y - cy;
+    const row = y * sw;
+    for (let x = 0; x < sw; x += 2) {
+      const val = Y[row + x];
+      if (val > p01 && val < p99) {
+        const dx = x - cx;
+        const u = (dx * dx + dy * dy) / maxR2;
+        sumU += u;
+        sumY += val;
+        sumUU += u * u;
+        sumUY += u * val;
+        validV++;
+      }
+    }
+  }
+
+  let estVig = 0.0;
+  let radialSlope = 0.0;
+  if (validV > 20) {
+    const meanU = sumU / validV;
+    const meanY = sumY / validV;
+    const covUY = (sumUY / validV) - meanU * meanY;
+    const varU = (sumUU / validV) - meanU * meanU;
+    radialSlope = varU > 1e-6 ? covUY / varU : 0.0;
+    if (radialSlope < -0.005 && meanY > 1e-4) {
+      const relDrop = Math.min(0.65, -radialSlope / meanY);
+      const ratio = 1.0 / Math.max(0.35, 1.0 - relDrop);
+      estVig = (Math.sqrt(ratio) - 1.0) / 0.28;
+    }
+  }
+  estVig = Math.max(0.0, Math.min(1.0, Math.round(estVig * 50) / 50));
+
+  // 3. Immerkaer Double-Laplacian Noise Estimation in Anscombe Space
+  const sigmaVST = computeImmerkaerSigma(Z_vst, sw, sh);
+  const estAnscombe = Math.max(0, Math.min(30, Math.round(sigmaVST * 11.5)));
+
+  // 4. Structure Tensor Coherence & Tenengrad Spectral Blur Ratio
+  let sumCoh = 0.0, edgeCount = 0;
+  let gradEnergy = 0.0, lapEnergy = 0.0;
+
+  for (let y = 1; y < sh - 1; y++) {
+    const rU = (y - 1) * sw, rM = y * sw, rD = (y + 1) * sw;
+    for (let x = 1; x < sw - 1; x++) {
+      const ix = (
+        3 * (Y[rU + x + 1] - Y[rU + x - 1]) +
+        10 * (Y[rM + x + 1] - Y[rM + x - 1]) +
+        3 * (Y[rD + x + 1] - Y[rD + x - 1])
+      ) / 32.0;
+      const iy = (
+        3 * (Y[rD + x - 1] - Y[rU + x - 1]) +
+        10 * (Y[rD + x] - Y[rU + x]) +
+        3 * (Y[rD + x + 1] - Y[rU + x + 1])
+      ) / 32.0;
+
+      const g2 = ix * ix + iy * iy;
+      gradEnergy += g2;
+
+      const lap = Y[rU + x] + Y[rD + x] + Y[rM + x - 1] + Y[rM + x + 1] - 4.0 * Y[rM + x];
+      lapEnergy += lap * lap;
+
+      if (g2 > 1e-4) {
+        const j11 = ix * ix, j22 = iy * iy, j12 = ix * iy;
+        const det = Math.hypot(j11 - j22, 2.0 * j12);
+        const coh = Math.pow(det / (g2 + 1e-7), 2);
+        sumCoh += coh;
+        edgeCount++;
+      }
+    }
+  }
+
+  const meanCoh = edgeCount > 0 ? sumCoh / edgeCount : 0.5;
+  const hfRatio = gradEnergy > 1e-6 ? Math.sqrt(lapEnergy / gradEnergy) : 0.5;
+
+  // Derive Tensor Steering, Convex Hull Clamp, Kernel, IBP, and TV-RL
+  const estTensor = Math.max(0.20, Math.min(1.00, Math.round((0.40 + 0.55 * meanCoh) * 50) / 50));
+  const estHull = Math.max(0.50, Math.min(1.00, Math.round((0.72 + 0.25 * meanCoh) * 50) / 50));
+
+  let estKernel = 'lanczos4';
+  if (sigmaVST > 1.35) {
+    estKernel = 'mitchell';
+  } else if (sigmaVST > 0.85) {
+    estKernel = 'lanczos3';
+  }
+
+  const blurDeficit = Math.max(0.0, Math.min(1.0, (1.15 - hfRatio) / 0.85));
+  const estRL = Math.max(0.10, Math.min(0.90, Math.round((0.25 + 0.55 * blurDeficit) * 50) / 50));
+  const estIBP = sigmaVST > 1.5 ? 2 : (blurDeficit > 0.45 ? 4 : 3);
+
+  // Optimal Upscale Factor based on source pixel budget
+  let estScale = '2';
+  if (n < 90000) {
+    estScale = '3';
+  } else if (n > 2500000) {
+    estScale = '2';
+  }
+
+  // Apply solved parameters to UI controls
+  hdGammaSlider.value = estGamma;
+  document.getElementById('hdGammaVal').innerText = estGamma.toFixed(2);
+
+  vigSlider.value = estVig;
+  document.getElementById('vigVal').innerText = estVig.toFixed(2);
+
+  anscombeSlider.value = estAnscombe;
+  document.getElementById('anscombeVal').innerText = estAnscombe;
+
+  cdfToggle.checked = needCDF;
+  scaleSelect.value = estScale;
+  kernelSelect.value = estKernel;
+
+  tensorSlider.value = estTensor;
+  document.getElementById('tensorVal').innerText = estTensor.toFixed(2);
+
+  ringSlider.value = estHull;
+  document.getElementById('ringVal').innerText = estHull.toFixed(2);
+
+  ibpSlider.value = estIBP;
+  document.getElementById('ibpVal').innerText = estIBP + ' iter';
+
+  rlSlider.value = estRL;
+  document.getElementById('rlVal').innerText = estRL.toFixed(2);
+
+  // Populate Diagnostic Telemetry Table
+  diagTableBody.innerHTML =
+    `<tr><td>Immerkaer Grain Estimator</td><td>&sigma;<sub>VST</sub> = &radic;(&pi;/2)/(6N) &Sigma;|M<sub>Imm</sub> * Z|</td><td>${sigmaVST.toFixed(4)} VST</td><td class="status-pass">Gate = ${estAnscombe}, Basis = ${estKernel.toUpperCase()}</td></tr>` +
+    `<tr><td>Radial Vignetting Regression</td><td>&partial;Y / &partial;(r<sup>2</sup>/R<sub>max</sub><sup>2</sup>)</td><td>${radialSlope.toFixed(4)}</td><td class="status-pass">Cos<sup>4</sup>(&theta;) = ${estVig.toFixed(2)}</td></tr>` +
+    `<tr><td>Sensitometric Quantiles</td><td>[P<sub>01</sub>, P<sub>50</sub>, P<sub>99</sub>]</td><td>[${p01.toFixed(3)}, ${p50.toFixed(3)}, ${p99.toFixed(3)}]</td><td class="status-pass">&gamma;<sub>HD</sub> = ${estGamma.toFixed(2)}, CDF = ${needCDF ? 'ON' : 'OFF'}</td></tr>` +
+    `<tr><td>Spectral Blur Ratio</td><td>(&Sigma;|&nabla;<sup>2</sup>Y|<sup>2</sup> / &Sigma;|&nabla;Y|<sup>2</sup>)<sup>1/2</sup></td><td>${hfRatio.toFixed(4)}</td><td class="status-pass">TV-RL = ${estRL.toFixed(2)}, IBP = ${estIBP} iter</td></tr>` +
+    `<tr><td>Structure Tensor Coherence</td><td>N<sup>-1</sup> &Sigma;((&lambda;<sub>1</sub>-&lambda;<sub>2</sub>)/(&lambda;<sub>1</sub>+&lambda;<sub>2</sub>))<sup>2</sup></td><td>${meanCoh.toFixed(4)}</td><td class="status-pass">Steer = ${estTensor.toFixed(2)}, Hull = ${estHull.toFixed(2)}</td></tr>`;
+}
+
+// --- 9-AXIOM FLOAT64 SELF-VERIFICATION SUITE ---
 function runAxiomSelfTests() {
   const rows = [];
 
@@ -514,6 +723,17 @@ function runAxiomSelfTests() {
   const fluxDrift = Math.abs((meanAfter - meanBefore) / stepHR.length);
   const pass8 = fluxDrift < 1e-3;
   rows.push(`<tr><td>VIII</td><td>TV-Richardson-Lucy Energy Conservation</td><td>${fluxDrift.toExponential(2)}</td><td class="${pass8 ? 'status-pass' : 'status-warn'}">${pass8 ? 'Verified' : 'Deviation'}</td></tr>`);
+
+  // Axiom IX: Immerkaer Operator Planar Null-Space Invariant (Zero Response on Linear Gradients)
+  const rampField = new Float64Array(16 * 16);
+  for (let y = 0; y < 16; y++) {
+    for (let x = 0; x < 16; x++) {
+      rampField[y * 16 + x] = 3.7 * x - 2.1 * y + 0.45 * x * y + 12.0;
+    }
+  }
+  const rampSigma = computeImmerkaerSigma(rampField, 16, 16);
+  const pass9 = rampSigma < 1e-13;
+  rows.push(`<tr><td>IX</td><td>Immerkaer Planar/Bilinear Null-Space</td><td>${rampSigma.toExponential(2)}</td><td class="${pass9 ? 'status-pass' : 'status-warn'}">${pass9 ? 'Verified' : 'Deviation'}</td></tr>`);
 
   axiomTableBody.innerHTML = rows.join('');
 }
@@ -613,7 +833,6 @@ function applyVignettingCorrection(Y, w, h, vigStrength) {
     for (let x = 0; x < w; x++) {
       const dx = x - cx;
       const r2Norm = (dx * dx + dy * dy) / maxR2;
-      // Inverse cos^4(theta) = (1 + tan^2(theta))^2
       const gain = Math.pow(1.0 + vigStrength * 0.28 * r2Norm, 2);
       const val = Y[row + x];
       origMean += val;
@@ -635,7 +854,6 @@ function applyAnscombePeronaMalik(Y, w, h, gateStrength) {
   const vst = new Float32Array(Y.length);
   for (let i = 0; i < Y.length; i++) vst[i] = anscombeForward(Y[i]);
 
-  // In Anscombe space, Poisson shot noise has uniform standard deviation sigma = 1.0
   const kappa = (gateStrength / 10.0) * 1.35;
   const invK2 = 1.0 / (kappa * kappa + 1e-8);
   const diffused = new Float32Array(vst);
@@ -789,7 +1007,6 @@ function applyTVRichardsonLucy(Y, w, h, strength) {
       const xL = Math.max(0, x - 1), xR = Math.min(w - 1, x + 1);
       const c = Y[idx];
 
-      // Total Variation curvature divergence penalty to prevent film-grain amplification
       const dxR = Y[rMid + xR] - c, dxL = c - Y[rMid + xL];
       const dyD = Y[rDn + x] - c,   dyU = c - Y[rUp + x];
       const divTV = (dxR / (Math.abs(dxR) + 1e-3) - dxL / (Math.abs(dxL) + 1e-3)) +
@@ -810,18 +1027,15 @@ function generateSyntheticTestTarget() {
   c.width = w; c.height = h;
   const cx = c.getContext('2d');
 
-  // 1. Draw Ground Truth High-Contrast Survey Geometry
   cx.fillStyle = '#242629';
   cx.fillRect(0, 0, w, h);
 
-  // Diagonal street grid & railway lines
   cx.strokeStyle = '#d8dce2';
   cx.lineWidth = 1.3;
   for (let i = -80; i < w; i += 15) {
     cx.beginPath(); cx.moveTo(i, 0); cx.lineTo(i + 110, h); cx.stroke();
   }
 
-  // Siemens Star optical resolution target
   const centerX = 72, centerY = 90, radius = 56;
   cx.fillStyle = '#141619';
   cx.beginPath(); cx.arc(centerX, centerY, radius + 4, 0, Math.PI * 2); cx.fill();
@@ -836,7 +1050,6 @@ function generateSyntheticTestTarget() {
     cx.fill();
   }
 
-  // Survey calibration blocks & fiducial typography
   cx.fillStyle = '#f4f6f8';
   cx.fillRect(148, 20, 74, 54);
   cx.fillStyle = '#181a1d';
@@ -848,7 +1061,6 @@ function generateSyntheticTestTarget() {
   cx.font = '10px monospace';
   cx.fillText('1948 PLATE', 148, 126);
 
-  // 2. Apply Synthetic Historical Degradation (Vignetting + Base Fog + Silver Grain)
   const imgData = cx.getImageData(0, 0, w, h);
   const d = imgData.data;
   const maxR2 = (w * 0.5) * (w * 0.5) + (h * 0.5) * (h * 0.5);
@@ -858,18 +1070,15 @@ function generateSyntheticTestTarget() {
     for (let x = 0; x < w; x++) {
       const dx = x - w * 0.5;
       const r2 = (dx * dx + dy * dy) / maxR2;
-      // Forward cos^4(theta) lens falloff
-      const vigFalloff = Math.pow(1.0 + 0.22 * r2, -2);
+      const vigFalloff = Math.pow(1.0 + 0.24 * r2, -2);
       const idx = (y * w + x) * 4;
 
-      // Deterministic pseudo-random Poisson silver-halide grain
       const hash = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
       const grain = ((hash - Math.floor(hash)) - 0.5) * 14.0;
 
       for (let ch = 0; ch < 3; ch++) {
-        // Compress dynamic range (base fog + shoulder) and apply vignetting + grain
         const raw = d[idx + ch] * vigFalloff;
-        const fogged = 24.0 + raw * 0.78 + grain;
+        const fogged = 26.0 + raw * 0.74 + grain;
         d[idx + ch] = Math.min(255, Math.max(0, Math.round(fogged)));
       }
     }
@@ -877,6 +1086,9 @@ function generateSyntheticTestTarget() {
   cx.putImageData(imgData, 0, 0);
 
   sourceCanvas = c;
+  if (autoModeToggle.checked) {
+    autoDetectOptimalParameters(sourceCanvas);
+  }
   triggerLeonPipeline();
 }
 
@@ -903,6 +1115,9 @@ fileInput.addEventListener('change', e => {
       c.width = img.width; c.height = img.height;
       c.getContext('2d').drawImage(img, 0, 0);
       sourceCanvas = c;
+      if (autoModeToggle.checked) {
+        autoDetectOptimalParameters(sourceCanvas);
+      }
       triggerLeonPipeline();
     };
     img.src = ev.target.result;
@@ -911,6 +1126,13 @@ fileInput.addEventListener('change', e => {
 });
 
 synthBtn.addEventListener('click', generateSyntheticTestTarget);
+autoDetectBtn.addEventListener('click', () => {
+  if (!sourceCanvas) generateSyntheticTestTarget();
+  else {
+    autoDetectOptimalParameters(sourceCanvas);
+    triggerLeonPipeline();
+  }
+});
 runBtn.addEventListener('click', triggerLeonPipeline);
 
 function renderWipeComparison() {
@@ -946,7 +1168,7 @@ function triggerLeonPipeline() {
     return;
   }
   outputFrame.style.display = 'block';
-  telemetry.innerHTML = 'Executing photochemical, radiometric, and spatial inverse pipeline...';
+  telemetry.innerHTML = 'Executing autonomous photochemical, radiometric, and spatial inverse pipeline...';
   requestAnimationFrame(() => requestAnimationFrame(executeLeonPipeline));
 }
 
@@ -973,13 +1195,11 @@ function executeLeonPipeline() {
 
   const srcBytes = sourceCanvas.getContext('2d').getImageData(0, 0, sw, sh).data;
 
-  // Store Uncorrected Nearest-Neighbor Reference for Split Comparison
   canvas.width = dw; canvas.height = dh;
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(sourceCanvas, 0, 0, dw, dh);
   naiveImageData = ctx.getImageData(0, 0, dw, dh);
 
-  // Stage 1: Exact Linear Photon Space YCbCr Separation
   const nSrc = sw * sh;
   let Y_lr = new Float32Array(nSrc);
   const Cb_lr = new Float32Array(nSrc);
@@ -996,12 +1216,10 @@ function executeLeonPipeline() {
     Cr_lr[i] = (rL - y) / 1.5748;
   }
 
-  // Stage 2: Radial Cos^4(theta) Lens Vignetting Inversion
   if (vigStrength > 0) {
     Y_lr = applyVignettingCorrection(Y_lr, sw, sh, vigStrength);
   }
 
-  // Stage 3: Base-Plus-Fog (D_min) & Shoulder (D_max) Quantile Normalization + Hurter-Driffield Inversion
   if (useCDF || Math.abs(hdGamma - 1.0) > 1e-3) {
     const hist = new Uint32Array(1024);
     for (let i = 0; i < nSrc; i++) {
@@ -1021,20 +1239,16 @@ function executeLeonPipeline() {
     }
   }
 
-  // Stage 4: Anscombe Variance-Stabilizing Transform + Perona-Malik Silver-Grain Suppression
   const Y_clean = applyAnscombePeronaMalik(Y_lr, sw, sh, anscombeGate);
 
-  // Stage 5: Separable Orthogonal Sinc/Spline Upscaling with Convex Hull Monotonicity Clamp
   let Y_hr = scale === 1 ? new Float32Array(Y_clean) : resampleChannelFloat32(Y_clean, sw, sh, dw, dh, kernelMode, hullClamp);
   const Cb_hr = scale === 1 ? new Float32Array(Cb_lr) : resampleChannelFloat32(Cb_lr, sw, sh, dw, dh, 'mitchell', 0.5);
   const Cr_hr = scale === 1 ? new Float32Array(Cr_lr) : resampleChannelFloat32(Cr_lr, sw, sh, dw, dh, 'mitchell', 0.5);
 
-  // Stage 6: 2D Structure Tensor Sub-Pixel Bilinear Steering
   if (tensorStrength > 0) {
     Y_hr = applyStructureTensorSteering(Y_hr, dw, dh, tensorStrength);
   }
 
-  // Stage 7: Monotone Backtracking Iterative Back-Projection (IBP)
   let ibpReport = 'Inactive';
   if (ibpLoops > 0 && scale > 1) {
     const ibpOut = applyIterativeBackProjection(Y_hr, Y_clean, sw, sh, dw, dh, ibpLoops);
@@ -1042,12 +1256,10 @@ function executeLeonPipeline() {
     ibpReport = `${ibpOut.initErr.toFixed(4)} -> ${ibpOut.finalErr.toFixed(4)}`;
   }
 
-  // Stage 8: Total-Variation Regularized Richardson-Lucy Deconvolution
   if (rlStrength > 0) {
     Y_hr = applyTVRichardsonLucy(Y_hr, dw, dh, rlStrength);
   }
 
-  // Stage 9: Reconstruct Linear RGB -> Exact sRGB Bytes & Compute Shannon Entropy Gain
   leonImageData = ctx.createImageData(dw, dh);
   const outBytes = leonImageData.data;
   const nDst = dw * dh;
@@ -1069,7 +1281,6 @@ function executeLeonPipeline() {
     outHist[gB]++;
   }
 
-  // Calculate Shannon Information Entropy H = -Sum p_i log2(p_i) (bits/pixel)
   let entropy = 0.0;
   for (let b = 0; b < 256; b++) {
     if (outHist[b] > 0) {
@@ -1082,9 +1293,9 @@ function executeLeonPipeline() {
   const dt = (performance.now() - t0).toFixed(0);
 
   telemetry.innerHTML =
-    `Figure 1: Inverted archival manifold (${sw}x${sh} px to ${dw}x${dh} px, ${(nDst/1e6).toFixed(2)} MP, ${dt} ms).<br>` +
-    `Sensitometry: H-D Gamma=${hdGamma}, Cos^4 Vignetting=${vigStrength}, Anscombe VST Gate=${anscombeGate}.<br>` +
-    `Spatial: Basis=${kernelMode.toUpperCase()}, Tensor=${tensorStrength}, IBP L2=${ibpReport}, TV-RL=${rlStrength}, Entropy=${entropy.toFixed(2)} bits/px.`;
+    `Figure 1: Reconstructed manifold (${sw}x${sh} px to ${dw}x${dh} px, ${(nDst/1e6).toFixed(2)} MP, ${dt} ms).<br>` +
+    `Solved Sensitometry: H-D Gamma=${hdGamma.toFixed(2)}, Cos^4 Vignetting=${vigStrength.toFixed(2)}, Anscombe VST Gate=${anscombeGate}.<br>` +
+    `Solved Spatial: Basis=${kernelMode.toUpperCase()}, Tensor=${tensorStrength.toFixed(2)}, IBP L2=${ibpReport}, TV-RL=${rlStrength.toFixed(2)}, Shannon Entropy=${entropy.toFixed(2)} bits/px.`;
 
   outputFrame.style.display = 'block';
   controls.style.display = 'grid';
@@ -1096,7 +1307,7 @@ document.getElementById('savePngBtn').addEventListener('click', () => {
   canvas.toBlob(blob => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.download = `LEON_INV_PLATE_${canvas.width}x${canvas.height}.png`;
+    a.download = `LEON_AUTO_INV_${canvas.width}x${canvas.height}.png`;
     a.href = url;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 3000);
@@ -1110,7 +1321,7 @@ document.getElementById('saveJpgBtn').addEventListener('click', () => {
   canvas.toBlob(blob => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.download = `LEON_INV_PLATE_${canvas.width}x${canvas.height}.jpg`;
+    a.download = `LEON_AUTO_INV_${canvas.width}x${canvas.height}.jpg`;
     a.href = url;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 3000);
