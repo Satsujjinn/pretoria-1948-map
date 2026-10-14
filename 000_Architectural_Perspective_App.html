@@ -27,7 +27,7 @@
 
 <div class="card">
   <h1>Perspective De-Skew Studio</h1>
-  <p class="sub">4-Corner Pin Homography & Architectural Cleanup</p>
+  <p class="sub">Float64 4-Corner Homography & Architectural Cleanup</p>
 
   <label class="btn btn-primary">
     Select Angled Blueprint / Sketch Photo
@@ -49,7 +49,7 @@
     <span class="val-display" id="contrastVal">1.6x</span>
   </div>
 
-  <div id="telemetry" class="telemetry">Tip: Drag the 4 corner handles on the image to match your document boundaries, then hit Flatten.</div>
+  <div id="telemetry" class="telemetry">Tip: Drag the 4 corner handles to match document boundaries, then hit Flatten.</div>
   <canvas id="canvas"></canvas>
 
   <div id="controls" class="controls">
@@ -61,9 +61,10 @@
 </div>
 
 <script>
+const MAX_CANVAS_PIXELS = 16777216;
 const fileInput = document.getElementById('fileInput');
 const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
 const telemetry = document.getElementById('telemetry');
 const controls = document.getElementById('controls');
 const modeSelect = document.getElementById('modeSelect');
@@ -74,6 +75,7 @@ const resetBtn = document.getElementById('resetBtn');
 
 let loadedImg = null;
 let srcData = null;
+let sw = 0, sh = 0;
 let corners = [];
 let draggingIdx = null;
 let isFlattened = false;
@@ -86,21 +88,27 @@ fileInput.addEventListener('change', e => {
     const img = new Image();
     img.onload = () => {
       loadedImg = img;
+      let w = img.width, h = img.height;
+      if (w * h > MAX_CANVAS_PIXELS) {
+        const ratio = Math.sqrt(MAX_CANVAS_PIXELS / (w * h));
+        w = Math.floor(w * ratio);
+        h = Math.floor(h * ratio);
+      }
+      sw = w; sh = h;
       const off = document.createElement('canvas');
-      off.width = img.width; off.height = img.height;
+      off.width = sw; off.height = sh;
       const octx = off.getContext('2d');
-      octx.drawImage(img, 0, 0);
-      srcData = octx.getImageData(0, 0, img.width, img.height).data;
+      octx.drawImage(img, 0, 0, sw, sh);
+      srcData = octx.getImageData(0, 0, sw, sh).data;
 
       document.getElementById('modeRow').style.display = 'flex';
       document.getElementById('contrastRow').style.display = 'flex';
-      
-      const w = img.width, h = img.height;
+
       corners = [
-        {x: w * 0.15, y: h * 0.15},
-        {x: w * 0.85, y: h * 0.15},
-        {x: w * 0.85, y: h * 0.85},
-        {x: w * 0.15, y: h * 0.85}
+        {x: sw * 0.15, y: sh * 0.15},
+        {x: sw * 0.85, y: sh * 0.15},
+        {x: sw * 0.85, y: sh * 0.85},
+        {x: sw * 0.15, y: sh * 0.85}
       ];
 
       isFlattened = false;
@@ -112,40 +120,40 @@ fileInput.addEventListener('change', e => {
   reader.readAsDataURL(file);
 });
 
-modeSelect.addEventListener('change', () => { if (isFlattened) applyWarpAndFilter(); });
+modeSelect.addEventListener('change', () => { if (isFlattened) triggerWarp(); });
 contrastSlider.addEventListener('input', () => {
   contrastVal.innerText = contrastSlider.value + 'x';
-  if (isFlattened) applyWarpAndFilter();
+  if (isFlattened) triggerWarp();
 });
 
 resetBtn.addEventListener('click', () => {
   if (!loadedImg) return;
   isFlattened = false;
   resetBtn.style.display = 'none';
-  telemetry.innerHTML = 'Tip: Drag the 4 corner handles on the image to match your document boundaries, then hit Flatten.';
+  telemetry.innerHTML = 'Tip: Drag the 4 corner handles to match document boundaries, then hit Flatten.';
   drawImageWithCorners();
 });
 
 function drawImageWithCorners() {
   if (!loadedImg) return;
-  canvas.width = loadedImg.width;
-  canvas.height = loadedImg.height;
+  canvas.width = sw;
+  canvas.height = sh;
   canvas.style.display = 'block';
   telemetry.style.display = 'block';
   controls.style.display = 'flex';
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(loadedImg, 0, 0);
+  ctx.clearRect(0, 0, sw, sh);
+  ctx.drawImage(loadedImg, 0, 0, sw, sh);
 
   ctx.strokeStyle = '#ff8f00';
-  ctx.lineWidth = Math.max(3, canvas.width * 0.005);
+  ctx.lineWidth = Math.max(3, sw * 0.005);
   ctx.beginPath();
   ctx.moveTo(corners[0].x, corners[0].y);
   for (let i = 1; i < 4; i++) ctx.lineTo(corners[i].x, corners[i].y);
   ctx.closePath();
   ctx.stroke();
 
-  const radius = Math.max(15, canvas.width * 0.02);
+  const radius = Math.max(15, sw * 0.02);
   corners.forEach((c, idx) => {
     ctx.fillStyle = '#ff8f00';
     ctx.beginPath();
@@ -167,11 +175,9 @@ function getTouchPos(e) {
   const rect = canvas.getBoundingClientRect();
   const clientX = e.touches ? e.touches[0].clientX : e.clientX;
   const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
   return {
-    x: (clientX - rect.left) * scaleX,
-    y: (clientY - rect.top) * scaleY
+    x: (clientX - rect.left) * (canvas.width / rect.width),
+    y: (clientY - rect.top) * (canvas.height / rect.height)
   };
 }
 
@@ -200,46 +206,65 @@ canvas.addEventListener('pointermove', e => {
 window.addEventListener('pointerup', () => { draggingIdx = null; });
 window.addEventListener('pointercancel', () => { draggingIdx = null; });
 
-function solveHomography(srcPts, dstPts) {
-  const A = [];
-  const b = [];
+function solveHomographyFloat64(srcPts, dstPts) {
+  const M = new Float64Array(72);
   for (let i = 0; i < 4; i++) {
     const x = dstPts[i].x, y = dstPts[i].y;
     const X = srcPts[i].x, Y = srcPts[i].y;
-    A.push([x, y, 1, 0, 0, 0, -x * X, -y * X]);
-    b.push(X);
-    A.push([0, 0, 0, x, y, 1, -x * Y, -y * Y]);
-    b.push(Y);
-  }
-  const n = 8;
-  for (let i = 0; i < n; i++) {
-    let maxRow = i;
-    for (let k = i + 1; k < n; k++) {
-      if (Math.abs(A[k][i]) > Math.abs(A[maxRow][i])) maxRow = k;
-    }
-    const tmpA = A[i]; A[i] = A[maxRow]; A[maxRow] = tmpA;
-    const tmpB = b[i]; b[i] = b[maxRow]; b[maxRow] = tmpB;
 
-    const pivot = A[i][i] || 1e-10;
-    for (let k = i + 1; k < n; k++) {
-      const c = -A[k][i] / pivot;
-      for (let j = i; j < n; j++) {
-        A[k][j] = i === j ? 0 : A[k][j] + c * A[i][j];
+    const r1 = (i * 2) * 9;
+    M[r1 + 0] = x; M[r1 + 1] = y; M[r1 + 2] = 1;
+    M[r1 + 6] = -x * X; M[r1 + 7] = -y * X; M[r1 + 8] = X;
+
+    const r2 = (i * 2 + 1) * 9;
+    M[r2 + 3] = x; M[r2 + 4] = y; M[r2 + 5] = 1;
+    M[r2 + 6] = -x * Y; M[r2 + 7] = -y * Y; M[r2 + 8] = Y;
+  }
+
+  for (let i = 0; i < 8; i++) {
+    let maxRow = i;
+    let maxVal = Math.abs(M[i * 9 + i]);
+    for (let k = i + 1; k < 8; k++) {
+      const val = Math.abs(M[k * 9 + i]);
+      if (val > maxVal) { maxVal = val; maxRow = k; }
+    }
+    if (maxRow !== i) {
+      for (let j = i; j <= 8; j++) {
+        const tmp = M[i * 9 + j];
+        M[i * 9 + j] = M[maxRow * 9 + j];
+        M[maxRow * 9 + j] = tmp;
       }
-      b[k] += c * b[i];
+    }
+    const pivot = M[i * 9 + i] || 1e-14;
+    for (let k = i + 1; k < 8; k++) {
+      const factor = M[k * 9 + i] / pivot;
+      M[k * 9 + i] = 0.0;
+      for (let j = i + 1; j <= 8; j++) {
+        M[k * 9 + j] -= factor * M[i * 9 + j];
+      }
     }
   }
-  const h = new Array(n).fill(0);
-  for (let i = n - 1; i >= 0; i--) {
-    let sum = b[i];
-    for (let j = i + 1; j < n; j++) sum -= A[i][j] * h[j];
-    h[i] = sum / (A[i][i] || 1e-10);
+
+  const h = new Float64Array(9);
+  for (let i = 7; i >= 0; i--) {
+    let sum = M[i * 9 + 8];
+    for (let j = i + 1; j < 8; j++) {
+      sum -= M[i * 9 + j] * h[j];
+    }
+    h[i] = sum / (M[i * 9 + i] || 1e-14);
   }
-  return [...h, 1];
+  h[8] = 1.0;
+  return h;
+}
+
+function triggerWarp() {
+  if (!loadedImg || !srcData) return;
+  telemetry.innerHTML = 'PROCESSING: Computing Float64 Homography Matrix...';
+  requestAnimationFrame(() => requestAnimationFrame(applyWarpAndFilter));
 }
 
 function applyWarpAndFilter() {
-  if (!loadedImg || !srcData) return;
+  const t0 = performance.now();
   const mode = modeSelect.value;
   const contrast = parseFloat(contrastSlider.value);
 
@@ -248,8 +273,13 @@ function applyWarpAndFilter() {
   const hLeft = Math.hypot(corners[3].x - corners[0].x, corners[3].y - corners[0].y);
   const hRight = Math.hypot(corners[2].x - corners[1].x, corners[2].y - corners[1].y);
 
-  const outW = Math.max(50, Math.round((wTop + wBot) / 2));
-  const outH = Math.max(50, Math.round((hLeft + hRight) / 2));
+  let outW = Math.max(50, Math.round((wTop + wBot) / 2));
+  let outH = Math.max(50, Math.round((hLeft + hRight) / 2));
+  if (outW * outH > MAX_CANVAS_PIXELS) {
+    const ratio = Math.sqrt(MAX_CANVAS_PIXELS / (outW * outH));
+    outW = Math.floor(outW * ratio);
+    outH = Math.floor(outH * ratio);
+  }
 
   const dstPts = [
     {x: 0, y: 0},
@@ -258,8 +288,8 @@ function applyWarpAndFilter() {
     {x: 0, y: outH - 1}
   ];
 
-  const H = solveHomography(corners, dstPts);
-  const sw = loadedImg.width, sh = loadedImg.height;
+  const H = solveHomographyFloat64(corners, dstPts);
+  const h0 = H[0], h1 = H[1], h2 = H[2], h3 = H[3], h4 = H[4], h5 = H[5], h6 = H[6], h7 = H[7];
 
   canvas.width = outW;
   canvas.height = outH;
@@ -267,10 +297,15 @@ function applyWarpAndFilter() {
   const d = outImgData.data;
 
   for (let y = 0; y < outH; y++) {
+    const rowY_X = h1 * y + h2;
+    const rowY_Y = h4 * y + h5;
+    const rowY_W = h7 * y + 1.0;
+
     for (let x = 0; x < outW; x++) {
-      const denom = H[6] * x + H[7] * y + 1;
-      const sx = (H[0] * x + H[1] * y + H[2]) / denom;
-      const sy = (H[3] * x + H[4] * y + H[5]) / denom;
+      const denom = h6 * x + rowY_W;
+      const invDenom = Math.abs(denom) > 1e-12 ? (1.0 / denom) : 0.0;
+      const sx = (h0 * x + rowY_X) * invDenom;
+      const sy = (h3 * x + rowY_Y) * invDenom;
 
       const x0 = Math.floor(sx), y0 = Math.floor(sy);
       let r = 255, g = 255, b = 255;
@@ -282,20 +317,17 @@ function applyWarpAndFilter() {
         const w01 = (1 - dx) * dy;
         const w11 = dx * dy;
 
-        const i00 = (y0 * sw + x0) * 4;
+        const i00 = (y0 * sw + x0) << 2;
         const i10 = i00 + 4;
-        const i01 = i00 + sw * 4;
+        const i01 = i00 + (sw << 2);
         const i11 = i01 + 4;
 
         r = srcData[i00] * w00 + srcData[i10] * w10 + srcData[i01] * w01 + srcData[i11] * w11;
         g = srcData[i00+1] * w00 + srcData[i10+1] * w10 + srcData[i01+1] * w01 + srcData[i11+1] * w11;
         b = srcData[i00+2] * w00 + srcData[i10+2] * w10 + srcData[i01+2] * w01 + srcData[i11+2] * w11;
-      } else if (x0 >= 0 && x0 < sw && y0 >= 0 && y0 < sh) {
-        const i00 = (y0 * sw + x0) * 4;
-        r = srcData[i00]; g = srcData[i00+1]; b = srcData[i00+2];
       }
 
-      const dstIdx = (y * outW + x) * 4;
+      const dstIdx = (y * outW + x) << 2;
       const gray = 0.299 * r + 0.587 * g + 0.114 * b;
 
       if (mode === 'sketch') {
@@ -304,9 +336,9 @@ function applyWarpAndFilter() {
         d[dstIdx] = val; d[dstIdx+1] = val; d[dstIdx+2] = val;
       } else if (mode === 'blueprint') {
         const norm = Math.min(255, Math.max(0, (255 - gray) * contrast));
-        d[dstIdx] = Math.floor(norm * 0.1);
-        d[dstIdx+1] = Math.floor(norm * 0.5);
-        d[dstIdx+2] = Math.floor(norm * 0.95);
+        d[dstIdx] = norm * 0.1;
+        d[dstIdx+1] = norm * 0.5;
+        d[dstIdx+2] = norm * 0.95;
       } else {
         d[dstIdx] = Math.min(255, Math.max(0, ((r / 255 - 0.5) * contrast + 0.5) * 255));
         d[dstIdx+1] = Math.min(255, Math.max(0, ((g / 255 - 0.5) * contrast + 0.5) * 255));
@@ -319,10 +351,11 @@ function applyWarpAndFilter() {
   ctx.putImageData(outImgData, 0, 0);
   isFlattened = true;
   resetBtn.style.display = 'block';
-  telemetry.innerHTML = `SUCCESS: Perspective De-Skewed to Rectangular ${outW}x${outH} px Document.`;
+  const dt = (performance.now() - t0).toFixed(0);
+  telemetry.innerHTML = `SUCCESS: De-Skewed to ${outW}x${outH} px (${dt} ms).`;
 }
 
-flattenBtn.addEventListener('click', applyWarpAndFilter);
+flattenBtn.addEventListener('click', triggerWarp);
 
 document.getElementById('saveJpgBtn').addEventListener('click', () => {
   canvas.toBlob(blob => {
