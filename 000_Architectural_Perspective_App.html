@@ -49,11 +49,11 @@
     <span class="val-display" id="contrastVal">1.6x</span>
   </div>
 
-  <div id="telemetry" class="telemetry">Tip: Drag the 4 corner handles to match document boundaries, then hit Flatten.</div>
+  <div id="telemetry" class="telemetry">NOTE: Drag the 4 corner handles to match document boundaries, then execute rectification.</div>
   <canvas id="canvas"></canvas>
 
   <div id="controls" class="controls">
-    <button class="btn btn-primary" id="flattenBtn">Apply Perspective Flattening</button>
+    <button class="btn btn-primary" id="flattenBtn">Execute Projective Rectification</button>
     <button class="btn btn-secondary" id="resetBtn" style="display:none;">Reset Corner Pins</button>
     <button class="btn btn-secondary" id="saveJpgBtn">Download Flattened Plan (JPG)</button>
     <button class="btn btn-secondary" id="savePdfBtn">Save as Architectural PDF</button>
@@ -130,7 +130,7 @@ resetBtn.addEventListener('click', () => {
   if (!loadedImg) return;
   isFlattened = false;
   resetBtn.style.display = 'none';
-  telemetry.innerHTML = 'Tip: Drag the 4 corner handles to match document boundaries, then hit Flatten.';
+  telemetry.innerHTML = 'NOTE: Drag the 4 corner handles to match document boundaries, then execute rectification.';
   drawImageWithCorners();
 });
 

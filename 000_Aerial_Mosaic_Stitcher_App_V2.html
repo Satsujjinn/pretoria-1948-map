@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Aerial Mosaic Stitcher Pro V2</title>
+<title>Aerial Mosaic Stitcher V2</title>
 <style>
   * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
   body { background: #121212; color: #f0f0f0; margin: 0; padding: 14px; display: flex; flex-direction: column; align-items: center; }
@@ -392,7 +392,7 @@ function renderMosaic() {
   ctx.restore();
 
   telemetry.style.display = 'block';
-  telemetry.innerHTML = `MOSAIC SIZE: ${outW}x${outH} px | BRIGHTNESS: ${bright}x<br>OFFSET: dX=${dx}px, dY=${dy}px (Match: ${matchScore.toFixed(1)}%)<br>TIP: Adjust brightness slider to balance exposure differences.`;
+  telemetry.innerHTML = `MOSAIC SIZE: ${outW}x${outH} px | BRIGHTNESS: ${bright}x<br>OFFSET: dX=${dx}px, dY=${dy}px (Match: ${matchScore.toFixed(1)}%)<br>NOTE: Adjust brightness slider to balance exposure differences.`;
   canvas.style.display = 'block';
 }
 

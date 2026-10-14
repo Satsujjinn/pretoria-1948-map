@@ -6,54 +6,75 @@
 <title>Spatial & Architectural Processing Suite</title>
 <style>
   * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
-  body { background: #121212; color: #f0f0f0; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-  .container { width: 100%; max-width: 600px; }
-  h1 { font-size: 22px; color: #ffb300; margin-bottom: 6px; }
-  p.sub { font-size: 14px; color: #aaa; margin-bottom: 16px; }
-  .hero-img { width: 100%; border-radius: 12px; border: 1px solid #333; margin-bottom: 20px; display: block; box-shadow: 0 6px 20px rgba(0,0,0,0.5); }
-  .app-card { background: #1e1e1e; border: 1px solid #333; border-radius: 12px; padding: 16px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: inherit; transition: border-color 0.2s; }
-  .app-card:hover { border-color: #ffb300; }
-  .app-title { font-size: 16px; font-weight: 700; color: #fff; display: flex; justify-content: space-between; align-items: center; }
-  .app-desc { font-size: 13px; color: #999; line-height: 1.4; }
-  .tag { font-size: 11px; font-family: monospace; background: #2c2c2e; padding: 3px 8px; border-radius: 6px; color: #ffb300; width: fit-content; }
+  body { background: #0d0d0d; color: #e0e0e0; margin: 0; padding: 24px 16px; display: flex; flex-direction: column; align-items: center; }
+  .container { width: 100%; max-width: 640px; }
+  header { border-bottom: 1px solid #2a2a2a; padding-bottom: 16px; margin-bottom: 20px; }
+  h1 { font-size: 20px; font-weight: 700; color: #ffffff; margin: 0 0 6px 0; letter-spacing: -0.3px; }
+  p.sub { font-size: 13px; color: #888888; margin: 0; font-family: monospace; }
+  .hero-img { width: 100%; border-radius: 6px; border: 1px solid #2a2a2a; margin-bottom: 20px; display: block; }
+  .app-card { background: #161616; border: 1px solid #2a2a2a; border-radius: 6px; padding: 14px 16px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit; transition: border-color 0.15s, background 0.15s; }
+  .app-card:hover { border-color: #666666; background: #1c1c1c; }
+  .app-header { display: flex; justify-content: space-between; align-items: center; }
+  .app-title { font-size: 15px; font-weight: 600; color: #ffffff; }
+  .app-desc { font-size: 12.5px; color: #999999; line-height: 1.45; }
+  .tag { font-size: 10px; font-family: monospace; text-transform: uppercase; background: #222222; border: 1px solid #333333; padding: 2px 6px; border-radius: 4px; color: #bbbbbb; letter-spacing: 0.5px; }
+  footer { margin-top: 24px; padding-top: 14px; border-top: 1px solid #2a2a2a; font-size: 11px; color: #666666; font-family: monospace; display: flex; justify-content: space-between; }
+  footer a { color: #888888; text-decoration: none; }
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>Spatial & Architectural Processing Suite</h1>
-  <p class="sub">Open-source photogrammetry, image upscaling, and architectural practice toolkit.</p>
+  <header>
+    <h1>Spatial & Architectural Processing Suite</h1>
+    <p class="sub">v1.0.0 | Client-Side Photogrammetry & Computational Geometry</p>
+  </header>
 
-  <img src="assets/demo_blueprint.jpg" alt="Morgenster Somerset West Architectural Blueprint" class="hero-img">
+  <img src="assets/demo_blueprint.jpg" alt="Rectified Architectural Elevation" class="hero-img">
 
   <a href="000_Architectural_Perspective_App.html" class="app-card">
-    <div class="app-title">Architectural Perspective De-Skew Studio <span>&rarr;</span></div>
-    <div class="app-desc">Float64 four-point corner-pin homography warp to square angled blueprints and sketches into flat drafting documents.</div>
-    <div class="tag">Architecture</div>
+    <div class="app-header">
+      <span class="app-title">Perspective De-Skew Studio</span>
+      <span class="tag">Projective Homography</span>
+    </div>
+    <div class="app-desc">Float64 8-DOF projective transformation with bilinear interpolation for rectifying oblique architectural documents and drawings.</div>
   </a>
 
   <a href="000_Architectural_Scale_Model_App.html" class="app-card">
-    <div class="app-title">Physical Scale Model & Cut-List Studio <span>&rarr;</span></div>
-    <div class="app-desc">Hand-cut scale converter (1:20 to 1:500), foamcore/cardboard butt-joint thickness deduction, roof slope calculator, and 2-pin photo ruler.</div>
-    <div class="tag">Model Making</div>
+    <div class="app-header">
+      <span class="app-title">Scale Model & Cut-List Studio</span>
+      <span class="tag">Fabrication Geometry</span>
+    </div>
+    <div class="app-desc">Metric-to-scale dimensional solver, board thickness butt-joint deduction, secant roof slope calculator, and 2-point photogrammetric ruler.</div>
   </a>
 
   <a href="000_Aerial_Super_Upscaler_App.html" class="app-card">
-    <div class="app-title">Aerial Super-Upscaler & Rectifier <span>&rarr;</span></div>
-    <div class="app-desc">Automated altitude and inclinometer homography correction for historical 1948 aerial plates.</div>
-    <div class="tag">Photogrammetry</div>
+    <div class="app-header">
+      <span class="app-title">Aerial Ortho-Rectifier & Upscaler</span>
+      <span class="tag">Photogrammetry</span>
+    </div>
+    <div class="app-desc">Automated flight altitude and focal length parameter estimation with inclinometer centroid homography correction for archival survey plates.</div>
   </a>
 
   <a href="000_Universal_Photo_Upscaler_App.html" class="app-card">
-    <div class="app-title">Universal Photo Upscaler <span>&rarr;</span></div>
-    <div class="app-desc">High-resolution bicubic resampling, edge sharpening, and auto-levels enhancement for general photography.</div>
-    <div class="tag">Image Processing</div>
+    <div class="app-header">
+      <span class="app-title">Universal Raster Resampler</span>
+      <span class="tag">Signal Processing</span>
+    </div>
+    <div class="app-desc">Single-pass bicubic super-sampling, histogram auto-leveling, and 5-point Laplacian unsharp masking with boundary preservation.</div>
   </a>
 
   <a href="000_Aerial_Mosaic_Stitcher_App_V3.html" class="app-card">
-    <div class="app-title">V3 Mosaic Stitcher <span>&rarr;</span></div>
-    <div class="app-desc">East-West flight strip alignment preserving survey instrument dials and historical metadata tags.</div>
-    <div class="tag">Cartography</div>
+    <div class="app-header">
+      <span class="app-title">Aerial Strip Mosaic Stitcher V3</span>
+      <span class="tag">Cartographic Registration</span>
+    </div>
+    <div class="app-desc">Zero-Mean Normalized Cross-Correlation (ZNCC) and L1 pixel difference registration with plate exposure equalization.</div>
   </a>
+
+  <footer>
+    <span>MIT License | Leon Jordaan</span>
+    <a href="https://github.com/Satsujjinn/spatial-architectural-suite">Source Repository</a>
+  </footer>
 </div>
 </body>
 </html>

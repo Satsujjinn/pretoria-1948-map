@@ -1,25 +1,33 @@
 # Spatial & Architectural Processing Suite
 
-**Live Web Suite:** [https://satsujjinn.github.io/spatial-architectural-suite/](https://satsujjinn.github.io/spatial-architectural-suite/)
+**Production Web Suite:** [https://satsujjinn.github.io/spatial-architectural-suite/](https://satsujjinn.github.io/spatial-architectural-suite/)
 
-An open-source collection of specialized, web-based tools for historical aerial photogrammetry, image super-sampling, architectural document perspective correction, and physical scale model fabrication.
+A client-side, zero-dependency HTML5 Canvas toolkit engineered for historical aerial photogrammetry, projective homography rectification, bicubic super-sampling, and architectural scale model fabrication.
 
-## Demo Gallery
+## Technical Demonstrations
 
-### Output Result ("Morgenster" Somerset West Architectural Plan)
+### Projective Rectification Output ("Morgenster" Somerset West Elevation)
 ![Flattened Blueprint](assets/demo_blueprint.jpg)
 
-### Architectural Perspective De-Skew Studio
-| Interactive Corner Pins | Monochrome Ink Draft |
+### Perspective De-Skew Interface
+| 4-Point Homography Control | Monochrome Thresholding |
 | :---: | :---: |
 | ![Corner Pins](assets/demo_corners.jpg) | ![Monochrome Filter](assets/demo_monochrome.jpg) |
 
-## Applications
-1. **Architectural Perspective De-Skew Studio**: Float64 four-point corner pin warping to flatten angled blueprint and sketch photos.
-2. **Physical Scale Model & Cut-List Studio**: Converts real-world dimensions to model millimeter cuts (1:20 to 1:500), deducts board thickness for flush butt-joints, computes pitched roof lengths, exports CSV cut-lists, and measures model photos via a 2-pin ruler.
-3. **Aerial Super-Upscaler & Rectifier**: Calculates flight parameters and applies inclinometer homography to historical survey plates.
-4. **Universal Photo Upscaler**: Multi-pass resolution booster with unsharp edge recovery and level balancing.
-5. **Mosaic Stitcher V3**: Strip alignment preserving metadata tags and flight instruments.
+## Core Modules
+
+| Module | File | Mathematical Implementation |
+| :--- | :--- | :--- |
+| **Perspective De-Skew** | `000_Architectural_Perspective_App.html` | 8-DOF projective homography solved via `Float64Array` Gaussian elimination with partial pivoting and bilinear interpolation. |
+| **Scale Model Calculator** | `000_Architectural_Scale_Model_App.html` | Bidirectional metric-to-scale conversion, material thickness butt-joint deduction, secant roof pitch projection, and 2-point photogrammetric calibration. |
+| **Ortho-Rectifier & Upscaler** | `000_Aerial_Super_Upscaler_App.html` | Optical scale derivation ($H = f \cdot S$) from 228.6 mm survey negatives and inclinometer centroid homography transformation. |
+| **Universal Resampler** | `000_Universal_Photo_Upscaler_App.html` | Single-pass dynamic range normalization, gain scaling, and 5-point Laplacian unsharp masking with boundary preservation. |
+| **Mosaic Stitcher V3** | `000_Aerial_Mosaic_Stitcher_App_V3.html` | Zero-Mean Normalized Cross-Correlation (ZNCC) and L1 minimum-difference block matching with radial alpha feathering. |
+
+## System Architecture & Constraints
+* **Execution Environment:** Client-side ECMAScript / HTML5 2D Context (`willReadFrequently: true`).
+* **Memory Management:** Enforces a strict $16,777,216$ pixel ($4096 \times 4096$) allocation ceiling to maintain stability on mobile WebKit/Blink engines.
+* **Data Privacy:** Zero network transmission; all raster buffers are processed locally in volatile memory.
 
 ## License
-Distributed under the MIT License. See LICENSE for details.
+MIT License. Copyright (c) 2026 Leon Christoffel Mynhardt Jordaan. See `LICENSE` for full terms.
