@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Architectural Physical Scale Model Studio</title>
+<style>
+  * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+  body { background: #121212; color: #f0f0f0; margin: 0; padding: 14px; display: flex; flex-direction: column; align-items: center; }
+  .card { background: #1e1e1e; border-radius: 14px; padding: 16px; width: 100%; max-width: 500px; box-shadow: 0 8px 24px rgba(0,0,0,0.45); margin-bottom: 14px; }
+  h1 { font-size: 20px; margin: 0 0 4px 0; color: #ffb300; }
+  h2 { font-size: 14px; margin: 14px 0 8px 0; color: #80cbc4; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #333; padding-bottom: 4px; }
+  p.sub { font-size: 13px; color: #aaa; margin: 0 0 14px 0; }
+  .opt-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 8px; background: #262629; padding: 9px 12px; border-radius: 8px; }
+  select, input[type="number"], input[type="text"] { background: #121212; color: #fff; border: 1px solid #555; padding: 6px 10px; border-radius: 6px; font-weight: 600; width: 135px; text-align: right; font-size: 13px; }
+  input[type="text"] { text-align: left; }
+  label.btn, button.btn { display: block; width: 100%; padding: 12px; border-radius: 10px; border: none; font-size: 14px; font-weight: 700; text-align: center; cursor: pointer; margin-bottom: 8px; }
+  .btn-primary { background: #ff8f00; color: #000; }
+  .btn-secondary { background: #2c2c2e; color: #fff; border: 1px solid #444; }
+  input[type="file"] { display: none; }
+  .telemetry { background: #000; border: 1px solid #333; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px; color: #00e676; margin-bottom: 10px; line-height: 1.5; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: monospace; margin-top: 8px; }
+  th, td { border: 1px solid #333; padding: 6px 8px; text-align: left; }
+  th { background: #262629; color: #ffb300; }
+  canvas { width: 100%; border-radius: 8px; border: 1px solid #444; background: #0a0a0a; display: none; margin-bottom: 10px; touch-action: none; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Physical Scale Model Studio</h1>
+  <p class="sub">Hand-Cut Model Calculator, Board Allowance & Photo Calibrator</p>
+
+  <h2>1. Scale & Material Setup</h2>
+  <div class="opt-row">
+    <span>Architectural Scale:</span>
+    <select id="scaleSelect">
+      <option value="20">1 : 20 (Detail Interior)</option>
+      <option value="50" selected>1 : 50 (Design Studio)</option>
+      <option value="100">1 : 100 (Building Plan)</option>
+      <option value="200">1 : 200 (Site Massing)</option>
+      <option value="500">1 : 500 (Urban Block)</option>
+      <option value="custom">Custom Scale Ratio</option>
+    </select>
+  </div>
+
+  <div class="opt-row" id="customScaleRow" style="display:none;">
+    <span>Custom Ratio (1 : X):</span>
+    <input type="number" id="customScaleInput" value="75" min="1" step="1">
+  </div>
+
+  <div class="opt-row">
+    <span>Board Thickness (mm):</span>
+    <select id="boardSelect">
+      <option value="1.0">1.0 mm Greyboard / Card</option>
+      <option value="1.5">1.5 mm Conservation Board</option>
+      <option value="2.0">2.0 mm Boxboard / Basswood</option>
+      <option value="3.0" selected>3.0 mm Foamcore / MDF</option>
+      <option value="5.0">5.0 mm Foamcore</option>
+    </select>
+  </div>
+
+  <h2>2. Real-World to Model Cut Calculator</h2>
+  <div class="opt-row">
+    <span>Component Label:</span>
+    <input type="text" id="partLabel" value="North Facade Wall">
+  </div>
+  <div class="opt-row">
+    <span>Real Length / Width (m):</span>
+    <input type="number" id="realLength" value="6.40" step="0.05">
+  </div>
+  <div class="opt-row">
+    <span>Real Height / Run (m):</span>
+    <input type="number" id="realHeight" value="3.00" step="0.05">
+  </div>
+  <div class="opt-row">
+    <span>Roof / Ramp Pitch (deg):</span>
+    <input type="number" id="pitchDeg" value="0" min="0" max="85" step="1">
+  </div>
+
+  <div id="calcOutput" class="telemetry"></div>
+
+  <button class="btn btn-primary" id="addCutBtn">+ Add Component to Hand-Cut List</button>
+
+  <div id="cutListContainer" style="display:none;">
+    <table>
+      <thead>
+        <tr>
+          <th>Part</th>
+          <th>Scale</th>
+          <th>Outer Cut (mm)</th>
+          <th>Inner Butt (mm)</th>
+        </tr>
+      </thead>
+      <tbody id="cutTableBody"></tbody>
+    </table>
+    <button class="btn btn-secondary" id="exportCsvBtn" style="margin-top:8px;">Download Cut-List (CSV)</button>
+    <button class="btn btn-secondary" id="clearListBtn">Clear Cut-List</button>
+  </div>
+
+  <h2>3. Photo Scale Calibrator (2-Pin Ruler)</h2>
+  <label class="btn btn-secondary">
+    Load Model / Drawing Photo to Measure
+    <input type="file" id="photoInput" accept="image/*">
+  </label>
+
+  <div class="opt-row" id="calRow" style="display:none;">
+    <span>Green Pin Known Model Dist (mm):</span>
+    <input type="number" id="refMMInput" value="100" step="1">
+  </div>
+
+  <div id="photoTelemetry" class="telemetry" style="display:none;"></div>
+  <canvas id="canvas"></canvas>
+</div>
+
+<script>
+const scaleSelect = document.getElementById('scaleSelect');
+const customScaleRow = document.getElementById('customScaleRow');
+const customScaleInput = document.getElementById('customScaleInput');
+const boardSelect = document.getElementById('boardSelect');
+const partLabel = document.getElementById('partLabel');
+const realLength = document.getElementById('realLength');
+const realHeight = document.getElementById('realHeight');
+const pitchDeg = document.getElementById('pitchDeg');
+const calcOutput = document.getElementById('calcOutput');
+const addCutBtn = document.getElementById('addCutBtn');
+const cutListContainer = document.getElementById('cutListContainer');
+const cutTableBody = document.getElementById('cutTableBody');
+const exportCsvBtn = document.getElementById('exportCsvBtn');
+const clearListBtn = document.getElementById('clearListBtn');
+
+let cutList = [];
+
+function getActiveScale() {
+  if (scaleSelect.value === 'custom') {
+    return Math.max(1, parseFloat(customScaleInput.value) || 50);
+  }
+  return parseFloat(scaleSelect.value);
+}
+
+function updateCalculation() {
+  const S = getActiveScale();
+  const T = parseFloat(boardSelect.value);
+  const L_m = parseFloat(realLength.value) || 0;
+  const H_m = parseFloat(realHeight.value) || 0;
+  const pitch = Math.min(85, Math.max(0, parseFloat(pitchDeg.value) || 0));
+
+  const modelL_mm = (L_m * 1000.0) / S;
+  const modelH_mm = (H_m * 1000.0) / S;
+
+  // Butt-joint deductions (subtracting 1x or 2x board thickness for overlapping corners)
+  const innerOneEnd_mm = Math.max(0, modelL_mm - T);
+  const innerTwoEnds_mm = Math.max(0, modelL_mm - 2.0 * T);
+
+  // Slope hypotenuse calculation
+  const pitchRad = (pitch * Math.PI) / 180.0;
+  const slopeH_mm = modelH_mm / Math.cos(pitchRad);
+
+  // Scaled human figure height (1.75m average)
+  const figureMM = (1.75 * 1000.0) / S;
+
+  calcOutput.innerHTML =
+    `MODEL OUTER CUT: ${modelL_mm.toFixed(2)} mm x ${modelH_mm.toFixed(2)} mm\n` +
+    `<br>FLUSH BUTT-JOINT (-1T / -2T): ${innerOneEnd_mm.toFixed(2)} mm / ${innerTwoEnds_mm.toFixed(2)} mm\n` +
+    (pitch > 0 ? `<br>SLOPED RAFTER CUT (${pitch} deg): ${modelL_mm.toFixed(2)} mm x ${slopeH_mm.toFixed(2)} mm\n` : '') +
+    `<br>SCALE FIGURE (1.75m Person): ${figureMM.toFixed(1)} mm tall`;
+
+  return {
+    label: partLabel.value || 'Wall',
+    scale: `1:${S}`,
+    outer: `${modelL_mm.toFixed(1)} x ${(pitch > 0 ? slopeH_mm : modelH_mm).toFixed(1)}`,
+    inner2T: `${innerTwoEnds_mm.toFixed(1)} x ${(pitch > 0 ? slopeH_mm : modelH_mm).toFixed(1)}`
+  };
+}
+
+scaleSelect.addEventListener('change', () => {
+  customScaleRow.style.display = scaleSelect.value === 'custom' ? 'flex' : 'none';
+  updateCalculation();
+  if (loadedImg) drawPhotoRulers();
+});
+customScaleInput.addEventListener('input', () => { updateCalculation(); if (loadedImg) drawPhotoRulers(); });
+boardSelect.addEventListener('change', updateCalculation);
+realLength.addEventListener('input', updateCalculation);
+realHeight.addEventListener('input', updateCalculation);
+pitchDeg.addEventListener('input', updateCalculation);
+
+addCutBtn.addEventListener('click', () => {
+  const item = updateCalculation();
+  cutList.push(item);
+  renderCutTable();
+});
+
+function renderCutTable() {
+  if (cutList.length === 0) {
+    cutListContainer.style.display = 'none';
+    return;
+  }
+  cutListContainer.style.display = 'block';
+  cutTableBody.innerHTML = cutList.map(c =>
+    `<tr><td>${c.label}</td><td>${c.scale}</td><td>${c.outer}</td><td>${c.inner2T}</td></tr>`
+  ).join('');
+}
+
+exportCsvBtn.addEventListener('click', () => {
+  let csv = 'Component,Scale,Outer Cut (mm),Inner 2T Butt Cut (mm)\n';
+  cutList.forEach(c => {
+    csv += `"${c.label}",${c.scale},${c.outer},${c.inner2T}\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.download = '000_MODEL_HAND_CUT_LIST.csv';
+  a.href = url;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+});
+
+clearListBtn.addEventListener('click', () => {
+  cutList = [];
+  renderCutTable();
+});
+
+// Photogrammetric 2-Vector Ruler Calibrator
+const photoInput = document.getElementById('photoInput');
+const calRow = document.getElementById('calRow');
+const refMMInput = document.getElementById('refMMInput');
+const photoTelemetry = document.getElementById('photoTelemetry');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let loadedImg = null;
+let pts = [];
+let activePt = null;
+
+photoInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      loadedImg = img;
+      const w = img.width, h = img.height;
+      // P0-P1: Green Reference Line | P2-P3: Amber Target Measurement Line
+      pts = [
+        {x: w * 0.2, y: h * 0.35, color: '#00e676', label: 'R1'},
+        {x: w * 0.8, y: h * 0.35, color: '#00e676', label: 'R2'},
+        {x: w * 0.2, y: h * 0.65, color: '#ffb300', label: 'M1'},
+        {x: w * 0.8, y: h * 0.65, color: '#ffb300', label: 'M2'}
+      ];
+      calRow.style.display = 'flex';
+      photoTelemetry.style.display = 'block';
+      canvas.style.display = 'block';
+      drawPhotoRulers();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+refMMInput.addEventListener('input', () => { if (loadedImg) drawPhotoRulers(); });
+
+function drawPhotoRulers() {
+  if (!loadedImg) return;
+  const w = loadedImg.width, h = loadedImg.height;
+  canvas.width = w; canvas.height = h;
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(loadedImg, 0, 0);
+
+  const lw = Math.max(3, w * 0.005);
+  const rad = Math.max(16, w * 0.022);
+
+  // Draw Reference Line (Green)
+  ctx.strokeStyle = '#00e676';
+  ctx.lineWidth = lw;
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  ctx.lineTo(pts[1].x, pts[1].y);
+  ctx.stroke();
+
+  // Draw Measurement Line (Amber)
+  ctx.strokeStyle = '#ffb300';
+  ctx.lineWidth = lw;
+  ctx.beginPath();
+  ctx.moveTo(pts[2].x, pts[2].y);
+  ctx.lineTo(pts[3].x, pts[3].y);
+  ctx.stroke();
+
+  pts.forEach(p => {
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold ' + Math.max(11, Math.floor(rad * 0.75)) + 'px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(p.label, p.x, p.y);
+  });
+
+  const refPx = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y) || 1e-5;
+  const targetPx = Math.hypot(pts[3].x - pts[2].x, pts[3].y - pts[2].y);
+  const refMM = parseFloat(refMMInput.value) || 100;
+  const S = getActiveScale();
+
+  const targetModelMM = targetPx * (refMM / refPx);
+  const targetRealM = (targetModelMM * S) / 1000.0;
+
+  photoTelemetry.innerHTML =
+    `GREEN REF (R1-R2): ${refMM.toFixed(1)} mm (${refPx.toFixed(0)} px)<br>` +
+    `AMBER MEASURED CUT (M1-M2): ${targetModelMM.toFixed(2)} mm<br>` +
+    `EQUIVALENT REAL-WORLD SPAN (@ 1:${S}): ${targetRealM.toFixed(3)} m`;
+}
+
+function getPos(e) {
+  const r = canvas.getBoundingClientRect();
+  const cx = e.touches ? e.touches[0].clientX : e.clientX;
+  const cy = e.touches ? e.touches[0].clientY : e.clientY;
+  return {
+    x: (cx - r.left) * (canvas.width / r.width),
+    y: (cy - r.top) * (canvas.height / r.height)
+  };
+}
+
+canvas.addEventListener('pointerdown', e => {
+  if (!loadedImg) return;
+  const pos = getPos(e);
+  const hit = Math.max(45, canvas.width * 0.05);
+  let best = Infinity;
+  pts.forEach((p, idx) => {
+    const d = Math.hypot(p.x - pos.x, p.y - pos.y);
+    if (d < hit && d < best) { best = d; activePt = idx; }
+  });
+});
+
+canvas.addEventListener('pointermove', e => {
+  if (activePt === null || !loadedImg) return;
+  const pos = getPos(e);
+  pts[activePt].x = Math.max(0, Math.min(canvas.width, pos.x));
+  pts[activePt].y = Math.max(0, Math.min(canvas.height, pos.y));
+  drawPhotoRulers();
+});
+
+window.addEventListener('pointerup', () => { activePt = null; });
+window.addEventListener('pointercancel', () => { activePt = null; });
+
+updateCalculation();
+</script>
+</body>
+</html>
