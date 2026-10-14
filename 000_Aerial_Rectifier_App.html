@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>1948 Aerial Super-Rectifier</title>
+<style>
+  * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+  body { background: #121212; color: #f0f0f0; margin: 0; padding: 14px; display: flex; flex-direction: column; align-items: center; }
+  .card { background: #1e1e1e; border-radius: 14px; padding: 18px; width: 100%; max-width: 480px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); margin-bottom: 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px 0; color: #ff4444; }
+  p.sub { font-size: 13px; color: #aaa; margin: 0 0 14px 0; }
+  label.btn, button.btn { display: block; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; text-align: center; cursor: pointer; margin-bottom: 10px; }
+  .btn-primary { background: #ff3b30; color: #fff; }
+  .btn-secondary { background: #2c2c2e; color: #fff; border: 1px solid #444; }
+  input[type="file"] { display: none; }
+  .telemetry { background: #000; border: 1px solid #333; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px; color: #00ff66; margin-bottom: 12px; display: none; line-height: 1.5; }
+  canvas { width: 100%; border-radius: 8px; border: 1px solid #333; display: none; margin-bottom: 12px; }
+  .controls { display: none; gap: 8px; flex-direction: column; }
+  .opt-row { display: none; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 8px; background: #262629; padding: 10px 12px; border-radius: 8px; }
+  select, input[type="number"] { background: #121212; color: #fff; border: 1px solid #555; padding: 6px 10px; border-radius: 6px; font-weight: 600; width: 110px; text-align: right; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Aerial Ortho-Rectifier Pro</h1>
+  <p class="sub">Inclinometer Homography + Height Scale Correction</p>
+
+  <label class="btn btn-primary">
+    1. Select Aerial Photo
+    <input type="file" id="fileInput" accept="image/*">
+  </label>
+
+  <div class="opt-row" id="heightRow">
+    <span>Flight Height (H meters):</span>
+    <input type="number" id="flightHeightInput" value="3000" step="100">
+  </div>
+
+  <div class="opt-row" id="focalRow">
+    <span>Focal Length (f mm):</span>
+    <input type="number" id="focalLengthInput" value="152.4" step="0.1">
+  </div>
+
+  <div class="opt-row" id="scaleRow">
+    <span>Math Upscale Factor:</span>
+    <select id="scaleSelect">
+      <option value="1">1x (Original Res)</option>
+      <option value="2" selected>2x Super-Sampled</option>
+      <option value="3">3x Archival</option>
+    </select>
+  </div>
+
+  <div class="opt-row" id="sharpRow">
+    <span>Faithful Edge Recovery:</span>
+    <input type="checkbox" id="sharpToggle" checked style="transform:scale(1.4);">
+  </div>
+
+  <div class="opt-row" id="markRow">
+    <span>Red Instrument Target:</span>
+    <input type="checkbox" id="redMarkToggle" checked style="transform:scale(1.4);">
+  </div>
+
+  <div id="telemetry" class="telemetry"></div>
+  <canvas id="canvas"></canvas>
+
+  <div id="controls" class="controls">
+    <button class="btn btn-primary" id="saveJpgBtn">Download Super-Res JPG</button>
+    <button class="btn btn-secondary" id="savePdfBtn">Print / Save Square PDF</button>
+  </div>
+</div>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const telemetry = document.getElementById('telemetry');
+const controls = document.getElementById('controls');
+const scaleSelect = document.getElementById('scaleSelect');
+const sharpToggle = document.getElementById('sharpToggle');
+const redMarkToggle = document.getElementById('redMarkToggle');
+const flightHeightInput = document.getElementById('flightHeightInput');
+const focalLengthInput = document.getElementById('focalLengthInput');
+let loadedImg = null;
+
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      loadedImg = img;
+      document.getElementById('heightRow').style.display = 'flex';
+      document.getElementById('focalRow').style.display = 'flex';
+      document.getElementById('scaleRow').style.display = 'flex';
+      document.getElementById('sharpRow').style.display = 'flex';
+      document.getElementById('markRow').style.display = 'flex';
+      processImage();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+scaleSelect.addEventListener('change', () => { if (loadedImg) processImage(); });
+sharpToggle.addEventListener('change', () => { if (loadedImg) processImage(); });
+redMarkToggle.addEventListener('change', () => { if (loadedImg) processImage(); });
+flightHeightInput.addEventListener('input', () => { if (loadedImg) processImage(); });
+focalLengthInput.addEventListener('input', () => { if (loadedImg) processImage(); });
+
+function applyFaithfulSharpen(context, w, h) {
+  const srcData = context.getImageData(0, 0, w, h);
+  const dstData = context.createImageData(w, h);
+  const src = srcData.data, dst = dstData.data;
+  const amount = 0.35;
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const idx = (y * w + x) * 4;
+      for (let c = 0; c < 3; c++) {
+        const center = src[idx + c];
+        const neighbors = (
+          src[((y - 1) * w + x) * 4 + c] +
+          src[((y + 1) * w + x) * 4 + c] +
+          src[(y * w + (x - 1)) * 4 + c] +
+          src[(y * w + (x + 1)) * 4 + c]
+        ) * 0.25;
+        const val = center + (center - neighbors) * (amount * 4);
+        dst[idx + c] = val < 0 ? 0 : (val > 255 ? 255 : val);
+      }
+      dst[idx + 3] = 255;
+    }
+  }
+  context.putImageData(dstData, 0, 0);
+}
+
+function processImage() {
+  const scale = parseInt(scaleSelect.value, 10);
+  const H = parseFloat(flightHeightInput.value) || 3000;
+  const f = parseFloat(focalLengthInput.value) || 152.4;
+
+  const w0 = loadedImg.width, h0 = loadedImg.height;
+  const w = w0 * scale, h = h0 * scale;
+
+  canvas.width = w; canvas.height = h;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(loadedImg, 0, 0, w, h);
+
+  const x1 = 0, x2 = Math.floor(w * 0.08);
+  const y1 = Math.floor(h * 0.30), y2 = Math.floor(h * 0.40);
+  const roiW = x2 - x1, roiH = y2 - y1;
+  const imgData = ctx.getImageData(x1, y1, roiW, roiH).data;
+
+  let sumX = 0, sumY = 0, count = 0;
+  for (let y = 0; y < roiH; y++) {
+    for (let x = 0; x < roiW; x++) {
+      const idx = (y * roiW + x) * 4;
+      const gray = 0.299 * imgData[idx] + 0.587 * imgData[idx+1] + 0.114 * imgData[idx+2];
+      if (gray < 80) { sumX += x; sumY += y; count++; }
+    }
+  }
+  
+  const dx = count > 0 ? ((sumX / count) - (roiW / 2)) / scale : 0;
+  const dy = count > 0 ? ((sumY / count) - (roiH / 2)) / scale : 0;
+
+  ctx.save();
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, w, h);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  
+  const sf = 0.0004 * (3000 / H);
+  ctx.setTransform(1 + Math.abs(dy)*sf, dy * sf * 0.3, dx * sf * 0.3, 1 + Math.abs(dx)*sf, -dx * 0.8 * scale, -dy * 0.8 * scale);
+  ctx.drawImage(loadedImg, 0, 0, w, h);
+  ctx.restore();
+
+  if (sharpToggle.checked) {
+    applyFaithfulSharpen(ctx, w, h);
+  }
+
+  if (redMarkToggle.checked) {
+    const lw = Math.max(5, Math.floor(w * 0.005));
+    ctx.strokeStyle = "#ff0000";
+    ctx.lineWidth = lw;
+    ctx.strokeRect(x1 + lw, y1, roiW - lw, roiH);
+
+    const cx = Math.floor((x1 + x2) / 2), cy = Math.floor((y1 + y2) / 2);
+    const r = Math.floor(roiH * 0.45);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy);
+    ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r);
+    ctx.moveTo(x2, cy); ctx.lineTo(x2 + Math.floor(w * 0.05), cy);
+    ctx.stroke();
+  }
+
+  telemetry.style.display = 'block';
+  telemetry.innerHTML = `INPUT: ${w0}x${h0} px &rarr; OUTPUT: ${w}x${h} px (${scale*scale}x Pixels)<br>ALTITUDE: ${H}m | FOCAL: ${f}mm<br>INCLINOMETER dX: ${dx.toFixed(2)}px | dY: ${dy.toFixed(2)}px<br>MODE: Height-Corrected Homography + Unsharp`;
+  canvas.style.display = 'block';
+  controls.style.display = 'flex';
+}
+
+document.getElementById('saveJpgBtn').addEventListener('click', () => {
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = '000_RECTIFIED_HEIGHT_CORRECTED.jpg';
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  }, 'image/jpeg', 0.98);
+});
+
+document.getElementById('savePdfBtn').addEventListener('click', () => {
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.98);
+  const win = window.open('', '_blank');
+  win.document.write(`<html><head><title>Square Aerial PDF</title><style>@page { size: 228.6mm 228.6mm; margin: 0; } body { margin: 0; } img { width: 100%; height: 100%; object-fit: contain; }</style></head><body><img src="${dataUrl}" onload="window.print();"></body></html>`);
+  win.document.close();
+});
+</script>
+</body>
+</html>

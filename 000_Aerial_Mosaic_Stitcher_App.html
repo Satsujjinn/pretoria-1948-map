@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Aerial Mosaic Stitcher Pro</title>
+<style>
+  * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+  body { background: #121212; color: #f0f0f0; margin: 0; padding: 14px; display: flex; flex-direction: column; align-items: center; }
+  .card { background: #1e1e1e; border-radius: 14px; padding: 16px; width: 100%; max-width: 500px; box-shadow: 0 8px 24px rgba(0,0,0,0.45); margin-bottom: 14px; }
+  h1 { font-size: 20px; margin: 0 0 4px 0; color: #00e676; }
+  p.sub { font-size: 13px; color: #aaa; margin: 0 0 14px 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  label.btn, button.btn { display: block; width: 100%; padding: 13px 10px; border-radius: 10px; border: none; font-size: 14px; font-weight: 700; text-align: center; cursor: pointer; margin-bottom: 8px; }
+  .btn-frame { background: #263238; color: #80cbc4; border: 1px dashed #00e676; }
+  .btn-primary { background: #00c853; color: #000; font-size: 15px; }
+  .btn-accent { background: #ff9100; color: #000; font-size: 15px; }
+  .btn-secondary { background: #2c2c2e; color: #fff; border: 1px solid #444; }
+  input[type="file"] { display: none; }
+  .telemetry { background: #000; border: 1px solid #333; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px; color: #00e676; margin-bottom: 12px; display: none; line-height: 1.5; }
+  canvas { width: 100%; border-radius: 8px; border: 1px solid #444; background: #0a0a0a; display: none; margin-bottom: 12px; touch-action: none; }
+  .opt-row { display: none; justify-content: space-between; align-items: center; font-size: 12px; margin-bottom: 8px; background: #262629; padding: 8px 12px; border-radius: 8px; }
+  input[type="range"] { width: 45%; accent-color: #00e676; }
+  .val-input { width: 75px; background: #121212; color: #00e676; border: 1px solid #555; padding: 5px; border-radius: 6px; font-weight: 700; text-align: center; font-size: 13px; }
+  .controls { display: none; gap: 8px; flex-direction: column; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Aerial Map Mosaic Stitcher</h1>
+  <p class="sub">Precision Numeric Inputs + Robust Auto-Black Match</p>
+
+  <div class="grid-2">
+    <label class="btn btn-frame" id="lbl1">
+      + Strip West (Base)
+      <input type="file" id="file1" accept="image/*">
+    </label>
+    <label class="btn btn-frame" id="lbl2">
+      + Strip East (Overlap)
+      <input type="file" id="file2" accept="image/*">
+    </label>
+  </div>
+
+  <button class="btn btn-primary" id="autoAlignBtn" style="display:none;">
+    Auto-Match Overlapping Pixels (NCC)
+  </button>
+
+  <button class="btn btn-accent" id="autoBlackBtn" style="display:none;">
+    ⚡ Auto-Match Black (Zero Diff Search)
+  </button>
+
+  <div class="opt-row" id="trimRow">
+    <span>Crop Borders (%):</span>
+    <input type="range" id="trimSlider" min="0" max="15" step="0.5" value="7">
+    <input type="number" id="trimInput" class="val-input" min="0" max="15" step="0.5" value="7">
+  </div>
+
+  <div class="opt-row" id="dxRow">
+    <span>X Offset (dX):</span>
+    <input type="range" id="dxSlider" min="-3000" max="3000" step="1" value="350">
+    <input type="number" id="dxInput" class="val-input" min="-3000" max="3000" step="1" value="350">
+  </div>
+
+  <div class="opt-row" id="dyRow">
+    <span>Y Offset (dY):</span>
+    <input type="range" id="dySlider" min="-3000" max="3000" step="1" value="0">
+    <input type="number" id="dyInput" class="val-input" min="-3000" max="3000" step="1" value="0">
+  </div>
+
+  <div class="opt-row" id="blendRow">
+    <span>Seam Blend Mode:</span>
+    <select id="blendMode" style="background:#121212;color:#fff;border:1px solid #555;padding:5px;border-radius:6px;width:140px;">
+      <option value="feather">Feathered Seamless</option>
+      <option value="diff" selected>Pixel Difference</option>
+      <option value="50">50% Ghost Overlay</option>
+    </select>
+  </div>
+
+  <div id="telemetry" class="telemetry"></div>
+  <canvas id="canvas"></canvas>
+
+  <div id="controls" class="controls">
+    <button class="btn btn-primary" id="saveJpgBtn">Download Full Stitched Map (JPG)</button>
+    <button class="btn btn-secondary" id="savePdfBtn">Save Stitched Map as PDF</button>
+  </div>
+</div>
+
+<script>
+const file1 = document.getElementById('file1');
+const file2 = document.getElementById('file2');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const telemetry = document.getElementById('telemetry');
+const autoAlignBtn = document.getElementById('autoAlignBtn');
+const autoBlackBtn = document.getElementById('autoBlackBtn');
+
+const trimSlider = document.getElementById('trimSlider');
+const trimInput = document.getElementById('trimInput');
+const dxSlider = document.getElementById('dxSlider');
+const dxInput = document.getElementById('dxInput');
+const dySlider = document.getElementById('dySlider');
+const dyInput = document.getElementById('dyInput');
+const blendMode = document.getElementById('blendMode');
+const controls = document.getElementById('controls');
+
+let img1 = null, img2 = null;
+let matchScore = 0;
+
+function loadImg(input, lblId, callback) {
+  input.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById(lblId).innerText = "Loaded: " + file.name.substring(0, 12);
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const im = new Image();
+      im.onload = () => callback(im);
+      im.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+loadImg(file1, 'lbl1', im => { img1 = im; checkReady(); });
+loadImg(file2, 'lbl2', im => { img2 = im; checkReady(); });
+
+function checkReady() {
+  if (!img1 || !img2) return;
+  const maxShift = Math.max(img1.width, img1.height);
+  dxSlider.min = -maxShift; dxSlider.max = maxShift; dxInput.min = -maxShift; dxInput.max = maxShift;
+  dySlider.min = -maxShift; dySlider.max = maxShift; dyInput.min = -maxShift; dyInput.max = maxShift;
+
+  autoAlignBtn.style.display = 'block';
+  autoBlackBtn.style.display = 'block';
+  document.getElementById('trimRow').style.display = 'flex';
+  document.getElementById('dxRow').style.display = 'flex';
+  document.getElementById('dyRow').style.display = 'flex';
+  document.getElementById('blendRow').style.display = 'flex';
+  controls.style.display = 'flex';
+  runAutoCorrelation();
+}
+
+function bindPair(slider, input, callback) {
+  slider.addEventListener('input', () => {
+    input.value = slider.value;
+    callback();
+  });
+  input.addEventListener('input', () => {
+    slider.value = input.value;
+    callback();
+  });
+}
+
+bindPair(trimSlider, trimInput, renderMosaic);
+bindPair(dxSlider, dxInput, renderMosaic);
+bindPair(dySlider, dyInput, renderMosaic);
+
+function runAutoCorrelation() {
+  const sW = 180, sH = 180;
+  const trim = parseFloat(trimSlider.value) / 100;
+
+  const getGray = (im) => {
+    const c = document.createElement('canvas');
+    c.width = sW; c.height = sH;
+    const cx = c.getContext('2d');
+    const bx = im.width * trim, by = im.height * trim;
+    cx.drawImage(im, bx, by, im.width - 2*bx, im.height - 2*by, 0, 0, sW, sH);
+    const d = cx.getImageData(0, 0, sW, sH).data;
+    const g = new Float32Array(sW * sH);
+    let mean = 0;
+    for (let i = 0; i < g.length; i++) {
+      g[i] = 0.299*d[i*4] + 0.587*d[i*4+1] + 0.114*d[i*4+2];
+      mean += g[i];
+    }
+    mean /= g.length;
+    for (let i = 0; i < g.length; i++) g[i] -= mean;
+    return g;
+  };
+
+  const g1 = getGray(img1);
+  const g2 = getGray(img2);
+
+  const pW = 64, pH = 64;
+  const pX = Math.floor((sW - pW) / 2), pY = Math.floor((sH - pH) / 2);
+  let pEnergy = 0;
+  for (let y = 0; y < pH; y++) {
+    for (let x = 0; x < pW; x++) {
+      const v = g2[(pY + y) * sW + (pX + x)];
+      pEnergy += v * v;
+    }
+  }
+  pEnergy = Math.sqrt(pEnergy) + 1e-5;
+
+  let bestScore = -1, bestX = 0, bestY = 0;
+  for (let y = 4; y < sH - pH - 4; y += 2) {
+    for (let x = 4; x < sW - pW - 4; x += 2) {
+      let dot = 0, wEnergy = 0;
+      for (let ky = 0; ky < pH; ky += 2) {
+        for (let kx = 0; kx < pW; kx += 2) {
+          const v1 = g1[(y + ky) * sW + (x + kx)];
+          const v2 = g2[(pY + ky) * sW + (pX + kx)];
+          dot += v1 * v2;
+          wEnergy += v1 * v1;
+        }
+      }
+      const score = (dot * 4) / (Math.sqrt(wEnergy * 4) * pEnergy + 1e-5);
+      if (score > bestScore) {
+        bestScore = score;
+        bestX = x - pX;
+        bestY = y - pY;
+      }
+    }
+  }
+
+  const cropW = img1.width * (1 - 2 * trim);
+  const cropH = img1.height * (1 - 2 * trim);
+  const finalX = Math.round((bestX / sW) * cropW);
+  const finalY = Math.round((bestY / sH) * cropH);
+
+  dxSlider.value = finalX; dxInput.value = finalX;
+  dySlider.value = finalY; dyInput.value = finalY;
+  matchScore = Math.max(0, Math.min(99.9, bestScore * 100));
+  renderMosaic();
+}
+
+// Fixed Direct Pixel Difference Auto-Match
+autoBlackBtn.addEventListener('click', () => {
+  if (!img1 || !img2) return;
+  blendMode.value = 'diff';
+  const trim = parseFloat(trimSlider.value) / 100;
+  const bx1 = Math.floor(img1.width * trim), by1 = Math.floor(img1.height * trim);
+  const cw1 = img1.width - 2 * bx1, ch1 = img1.height - 2 * by1;
+  const bx2 = Math.floor(img2.width * trim), by2 = Math.floor(img2.height * trim);
+  const cw2 = img2.width - 2 * bx2, ch2 = img2.height - 2 * by2;
+
+  const rW = 150, rH = Math.round(150 * (ch1 / cw1));
+  const c1 = document.createElement('canvas'); c1.width = rW; c1.height = rH;
+  const cx1 = c1.getContext('2d'); cx1.drawImage(img1, bx1, by1, cw1, ch1, 0, 0, rW, rH);
+  const d1 = cx1.getImageData(0, 0, rW, rH).data;
+
+  const c2 = document.createElement('canvas'); c2.width = rW; c2.height = rH;
+  const cx2 = c2.getContext('2d'); cx2.drawImage(img2, bx2, by2, cw2, ch2, 0, 0, rW, rH);
+  const d2 = cx2.getImageData(0, 0, rW, rH).data;
+
+  const currentDx = parseInt(dxSlider.value, 10);
+  const currentDy = parseInt(dySlider.value, 10);
+  const scaleX = cw1 / rW;
+  const scaleY = ch1 / rH;
+
+  const baseNormDx = currentDx / scaleX;
+  const baseNormDy = currentDy / scaleY;
+
+  let minDiff = Infinity;
+  let bestNormDx = baseNormDx;
+  let bestNormDy = baseNormDy;
+
+  // Search a local grid around the current position
+  for (let ody = -30; ody <= 30; ody += 2) {
+    for (let odx = -60; odx <= 60; odx += 2) {
+      const testNormDx = baseNormDx + odx;
+      const testNormDy = baseNormDy + ody;
+
+      let totalDiff = 0;
+      let count = 0;
+
+      for (let y = 20; y < rH - 20; y += 6) {
+        for (let x = 20; x < rW - 20; x += 6) {
+          const x2 = Math.round(x + testNormDx);
+          const y2 = Math.round(y + testNormDy);
+
+          if (x2 >= 0 && x2 < rW && y2 >= 0 && y2 < rH) {
+            const idx1 = (y * rW + x) * 4;
+            const idx2 = (y2 * rW + x2) * 4;
+            const diff = Math.abs(d1[idx1] - d2[idx2]) + Math.abs(d1[idx1+1] - d2[idx2+1]) + Math.abs(d1[idx1+2] - d2[idx2+2]);
+            totalDiff += diff;
+            count++;
+          }
+        }
+      }
+
+      if (count > 0) {
+        const avgDiff = totalDiff / count;
+        if (avgDiff < minDiff) {
+          minDiff = avgDiff;
+          bestNormDx = testNormDx;
+          bestNormDy = testNormDy;
+        }
+      }
+    }
+  }
+
+  const finalX = Math.round(bestNormDx * scaleX);
+  const finalY = Math.round(bestNormDy * scaleY);
+
+  dxSlider.value = finalX; dxInput.value = finalX;
+  dySlider.value = finalY; dyInput.value = finalY;
+  matchScore = Math.max(0, Math.min(100, 100 - (minDiff / 7.65)));
+  renderMosaic();
+});
+
+autoAlignBtn.addEventListener('click', runAutoCorrelation);
+blendMode.addEventListener('change', renderMosaic);
+
+let startX = 0, startY = 0, dragging = false;
+canvas.addEventListener('pointerdown', e => { dragging = true; startX = e.clientX; startY = e.clientY; });
+canvas.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  const scale = canvas.width / canvas.clientWidth;
+  const newX = parseInt(dxSlider.value, 10) + Math.round((e.clientX - startX) * scale);
+  const newY = parseInt(dySlider.value, 10) + Math.round((e.clientY - startY) * scale);
+  dxSlider.value = newX; dxInput.value = newX;
+  dySlider.value = newY; dyInput.value = newY;
+  startX = e.clientX; startY = e.clientY;
+  renderMosaic();
+});
+window.addEventListener('pointerup', () => { dragging = false; });
+
+function renderMosaic() {
+  if (!img1 || !img2) return;
+  const trim = parseFloat(trimSlider.value) / 100;
+  const bx1 = Math.floor(img1.width * trim), by1 = Math.floor(img1.height * trim);
+  const cw1 = img1.width - 2 * bx1, ch1 = img1.height - 2 * by1;
+
+  const bx2 = Math.floor(img2.width * trim), by2 = Math.floor(img2.height * trim);
+  const cw2 = img2.width - 2 * bx2, ch2 = img2.height - 2 * by2;
+
+  const dx = parseInt(dxSlider.value, 10);
+  const dy = parseInt(dySlider.value, 10);
+
+  const minX = Math.min(0, dx), maxX = Math.max(cw1, cw1 + dx);
+  const minY = Math.min(0, dy), maxY = Math.max(ch1, ch1 + dy);
+  const outW = Math.max(100, maxX - minX);
+  const outH = Math.max(100, maxY - minY);
+
+  canvas.width = outW; canvas.height = outH;
+  ctx.fillStyle = "#101010";
+  ctx.fillRect(0, 0, outW, outH);
+
+  const x1 = -minX, y1 = -minY;
+  ctx.drawImage(img1, bx1, by1, cw1, ch1, x1, y1, cw1, ch1);
+
+  const x2 = dx - minX, y2 = dy - minY;
+  ctx.save();
+  if (blendMode.value === 'diff') {
+    ctx.globalCompositeOperation = 'difference';
+    ctx.drawImage(img2, bx2, by2, cw2, ch2, x2, y2, cw1, ch1);
+  } else if (blendMode.value === '50') {
+    ctx.globalAlpha = 0.5;
+    ctx.drawImage(img2, bx2, by2, cw2, ch2, x2, y2, cw1, ch1);
+  } else {
+    const off = document.createElement('canvas');
+    off.width = cw1; off.height = ch1;
+    const octx = off.getContext('2d');
+    octx.drawImage(img2, bx2, by2, cw2, ch2, 0, 0, cw1, ch1);
+    octx.globalCompositeOperation = 'destination-in';
+    const grad = octx.createRadialGradient(cw1/2, ch1/2, cw1*0.25, cw1/2, ch1/2, cw1*0.52);
+    grad.addColorStop(0, 'rgba(0,0,0,1)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    octx.fillStyle = grad;
+    octx.fillRect(0, 0, cw1, ch1);
+    ctx.drawImage(off, x2, y2);
+  }
+  ctx.restore();
+
+  telemetry.style.display = 'block';
+  telemetry.innerHTML = `MOSAIC SIZE: ${outW}x${outH} px | CROP: ${trimSlider.value}%<br>OFFSET: dX=${dx}px, dY=${dy}px (Match: ${matchScore.toFixed(1)}%)<br>TIP: Click "⚡ Auto-Match Black" to snap to zero-diff alignment.`;
+  canvas.style.display = 'block';
+}
+
+document.getElementById('saveJpgBtn').addEventListener('click', () => {
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.download = '000_COMPLETED_MAP_MOSAIC.jpg';
+    a.href = url;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  }, 'image/jpeg', 0.98);
+});
+
+document.getElementById('savePdfBtn').addEventListener('click', () => {
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.98);
+  const win = window.open('', '_blank');
+  win.document.write(`<html><head><title>Completed Aerial Mosaic PDF</title><style>@page { size: ${canvas.width*0.08}mm ${canvas.height*0.08}mm; margin: 0; } body { margin: 0; } img { width: 100%; height: 100%; object-fit: contain; }</style></head><body><img src="${dataUrl}" onload="window.print();"></body></html>`);
+  win.document.close();
+});
+</script>
+</body>
+</html>
