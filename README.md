@@ -1,9 +1,12 @@
-# 1948 Pretoria Aerial Super-Upscaler & Mosaic Stitcher
+# Spatial & Architectural Processing Suite
 
-A specialized, web-based photogrammetry and ortho-rectification toolkit designed for processing historical aerial survey plates (Job D147, January 1948). 
+An open-source collection of specialized, web-based tools for historical aerial photogrammetry, image super-sampling, and architectural document perspective correction.
 
-## Features
-* **Auto-Calculated Photogrammetry:** Automatically derives flight height ($H$) and focal length ($f$) from plate dimensions and standard survey specs.
-* **Inclinometer Homography Correction:** Calculates local perspective and tilt offsets ($dX, dY$) to correct raw historical survey angles.
-* **Archival Resolution Booster:** High-quality multi-pass bicubic upsampling paired with faithful edge recovery unsharp masking.
-* **Instrument Preservation:** Protects plate borders, flight clocks, altimeter dials, and "Jan 48" metadata tags during processing.
+## Applications
+1. **Aerial Super-Upscaler & Rectifier**: Calculates flight parameters and applies inclinometer homography to historical survey plates.
+2. **Universal Photo Upscaler**: Multi-pass resolution booster with unsharp edge recovery and level balancing.
+3. **Architectural Perspective De-Skew Studio**: Four-point corner pin warping to flatten angled blueprint and sketch photos.
+4. **Mosaic Stitcher V3**: Strip alignment preserving metadata tags and flight instruments.
+
+## License
+Distributed under the MIT License. See `LICENSE` for details.
